@@ -28,7 +28,7 @@ It is built for practical recovery work: real wildcard templates, real derivatio
 - You have a real mnemonic backup with missing words marked as `*`.
 - You want to validate candidates against exact hashes, Bloom filters, or XOR filters instead of scrolling through noise.
 - You want one tool that can check Bitcoin, Ethereum, Solana, and TON-oriented targets from the same recovery flow.
-- You want multi-GPU support without losing clarity or turning the workflow into a maze of unrelated modes.
+- You want multi-GPU support in a focused, easy-to-follow recovery workflow.
 
 ## Visual Tour
 
@@ -554,7 +554,7 @@ This public release is also an example of the kind of performance-oriented softw
 - У вас есть реальная BIP39-фраза, где часть слов потеряна и заменена на `*`.
 - Вы хотите проверять кандидатов не вручную, а по реальному `-hash`, Bloom/XOR-фильтрам или CPU verify.
 - Вам нужен один recovery flow для Bitcoin, Ethereum, Solana и TON.
-- Вам нужна MultiGPU-поддержка, но без хаоса из несвязанных режимов и случайных веток.
+- Вам нужна MultiGPU-поддержка в понятном и сфокусированном recovery workflow.
 
 ## Визуальный Обзор
 
