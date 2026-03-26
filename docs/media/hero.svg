@@ -55,7 +55,7 @@
     <text x="712" y="476" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="18">from one GPU to several without</text>
     <text x="712" y="504" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="18">leaving a recovery-only workflow.</text>
 
-    <rect x="712" y="548" width="242" height="48" rx="24" fill="url(#panelGlow)"/>
+    <rect x="712" y="548" width="302" height="48" rx="24" fill="url(#panelGlow)"/>
     <text x="740" y="578" fill="#04101d" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">Recovery-first public release</text>
 
     <text x="712" y="630" fill="#94a3b8" font-family="Segoe UI, Arial, sans-serif" font-size="18">Bitcoin • Ethereum • Solana • TON</text>
