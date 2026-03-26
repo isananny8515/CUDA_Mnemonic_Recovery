@@ -5,7 +5,7 @@
 
 <a id="english"></a>
 <p align="center">
-  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="900">
+  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="860">
 </p>
 
 <p align="center">
