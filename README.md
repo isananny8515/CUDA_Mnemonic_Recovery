@@ -128,18 +128,29 @@ GitHub Actions is set up to produce two distribution archives:
 - `CUDA_Mnemonic_Recovery-windows-builds.zip`
 - `CUDA_Mnemonic_Recovery-linux-builds.tar.gz`
 
-Each archive contains these build profiles:
+The Linux archive contains these build profiles:
 
 | Profile | Intended cards | Notes |
 | --- | --- | --- |
-| `sm_61-dlto` | GTX 10xx / Pascal | Dedicated legacy-friendly build |
-| `sm_75-dlto` | RTX 20xx / Turing | Best fit for RTX 20xx cards |
-| `sm_86-dlto` | RTX 30xx / Ampere | Dedicated Ampere build |
-| `sm_89-dlto` | RTX 40xx / Ada | Dedicated Ada build |
-| `sm_120-dlto` | RTX 50xx / Blackwell | Dedicated Blackwell build |
-| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One binary for modern cards from `sm_86` through `sm_120` |
+| `sm_61-dlto` | GTX 10xx / Pascal | Dedicated legacy-friendly Linux build |
+| `sm_75-dlto` | RTX 20xx / Turing | Best fit for RTX 20xx on Linux |
+| `sm_86-dlto` | RTX 30xx / Ampere | Dedicated Ampere Linux build |
+| `sm_89-dlto` | RTX 40xx / Ada | Dedicated Ada Linux build |
+| `sm_120-dlto` | RTX 50xx / Blackwell | Dedicated Blackwell Linux build |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One Linux binary for modern cards from `sm_86` through `sm_120` |
 
-Release bundles are built with CUDA `12.8`. The dedicated single-architecture profiles use CUDA device link-time optimization (`-dlto`), while the `universal-sm_86-sm_120` build intentionally ships without `-dlto`. CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
+The Windows archive contains these build profiles:
+
+| Profile | Intended cards | Notes |
+| --- | --- | --- |
+| `sm_61` | GTX 10xx / Pascal | Dedicated legacy-friendly Windows build |
+| `sm_75` | RTX 20xx / Turing | Best fit for RTX 20xx on Windows |
+| `sm_86` | RTX 30xx / Ampere | Dedicated Ampere Windows build |
+| `sm_89` | RTX 40xx / Ada | Dedicated Ada Windows build |
+| `sm_120` | RTX 50xx / Blackwell | Dedicated Blackwell Windows build |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One Windows binary for modern cards from `sm_86` through `sm_120` |
+
+Release bundles are built with CUDA `12.8`. Linux dedicated single-architecture profiles use CUDA device link-time optimization (`-dlto`), while the `universal-sm_86-sm_120` build intentionally ships without `-dlto`. Windows release bundles use standard Release device linking for better compatibility on GitHub-hosted runners. CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
 
 The packaged binaries are prepared to be easy to move between machines:
 
@@ -593,18 +604,29 @@ GitHub Actions подготавливает два дистрибутивных 
 - `CUDA_Mnemonic_Recovery-windows-builds.zip`
 - `CUDA_Mnemonic_Recovery-linux-builds.tar.gz`
 
-Внутри каждого архива лежат такие профили:
+В Linux-архиве лежат такие профили:
 
 | Профиль | Для каких карт | Примечание |
 | --- | --- | --- |
-| `sm_61-dlto` | GTX 10xx / Pascal | Отдельная сборка для старших Pascal-карт |
-| `sm_75-dlto` | RTX 20xx / Turing | Лучший выбор для RTX 20xx |
-| `sm_86-dlto` | RTX 30xx / Ampere | Отдельная сборка под Ampere |
-| `sm_89-dlto` | RTX 40xx / Ada | Отдельная сборка под Ada |
-| `sm_120-dlto` | RTX 50xx / Blackwell | Отдельная сборка под Blackwell |
-| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один бинарник для `sm_86`...`sm_120` |
+| `sm_61-dlto` | GTX 10xx / Pascal | Отдельная Linux-сборка для Pascal |
+| `sm_75-dlto` | RTX 20xx / Turing | Лучший выбор для RTX 20xx под Linux |
+| `sm_86-dlto` | RTX 30xx / Ampere | Отдельная Linux-сборка под Ampere |
+| `sm_89-dlto` | RTX 40xx / Ada | Отдельная Linux-сборка под Ada |
+| `sm_120-dlto` | RTX 50xx / Blackwell | Отдельная Linux-сборка под Blackwell |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один Linux-бинарник для `sm_86`...`sm_120` |
 
-Release-сборки делаются на CUDA `12.8`. Для отдельных single-arch профилей `CUDA device link-time optimization` (`-dlto`) остаётся включённым, а для `universal-sm_86-sm_120` он специально отключён. CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
+В Windows-архиве лежат такие профили:
+
+| Профиль | Для каких карт | Примечание |
+| --- | --- | --- |
+| `sm_61` | GTX 10xx / Pascal | Отдельная Windows-сборка для Pascal |
+| `sm_75` | RTX 20xx / Turing | Лучший выбор для RTX 20xx под Windows |
+| `sm_86` | RTX 30xx / Ampere | Отдельная Windows-сборка под Ampere |
+| `sm_89` | RTX 40xx / Ada | Отдельная Windows-сборка под Ada |
+| `sm_120` | RTX 50xx / Blackwell | Отдельная Windows-сборка под Blackwell |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один Windows-бинарник для `sm_86`...`sm_120` |
+
+Release-сборки делаются на CUDA `12.8`. Для отдельных Linux single-arch профилей `CUDA device link-time optimization` (`-dlto`) остаётся включённым, а для `universal-sm_86-sm_120` он специально отключён. Windows release-пакеты используют обычный Release device linking ради стабильной сборки на GitHub-hosted runners. CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
 
 Пакеты подготовлены так, чтобы их было удобно переносить между машинами:
 

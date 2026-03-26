@@ -48,9 +48,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: sm_89-dlto
+          - label: sm_89
             archs: "89"
-            dlto: "ON"
+            dlto: "OFF"
           - label: universal-sm_86-sm_120
             archs: "86;89;120"
             dlto: "OFF"

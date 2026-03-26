@@ -104,31 +104,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: sm_61-dlto
+          - label: sm_61
             archs: "61"
             family: "GTX 10xx / Pascal"
-            dlto: "ON"
-            dlto_note: "enabled"
-          - label: sm_75-dlto
+            dlto: "OFF"
+            dlto_note: "disabled"
+          - label: sm_75
             archs: "75"
             family: "RTX 20xx / Turing"
-            dlto: "ON"
-            dlto_note: "enabled"
-          - label: sm_86-dlto
+            dlto: "OFF"
+            dlto_note: "disabled"
+          - label: sm_86
             archs: "86"
             family: "RTX 30xx / Ampere"
-            dlto: "ON"
-            dlto_note: "enabled"
-          - label: sm_89-dlto
+            dlto: "OFF"
+            dlto_note: "disabled"
+          - label: sm_89
             archs: "89"
             family: "RTX 40xx / Ada"
-            dlto: "ON"
-            dlto_note: "enabled"
-          - label: sm_120-dlto
+            dlto: "OFF"
+            dlto_note: "disabled"
+          - label: sm_120
             archs: "120"
             family: "RTX 50xx / Blackwell"
-            dlto: "ON"
-            dlto_note: "enabled"
+            dlto: "OFF"
+            dlto_note: "disabled"
           - label: universal-sm_86-sm_120
             archs: "86;89;120"
             family: "One binary for RTX 30xx / 40xx / 50xx"
