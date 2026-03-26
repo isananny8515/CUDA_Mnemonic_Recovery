@@ -343,7 +343,7 @@ That pattern gives you a compact GPU filter on the front end and a precise CPU r
 | Option | Meaning |
 | --- | --- |
 | `-pbkdf N` | Override PBKDF2 iteration count. Default: `2048` |
-| `-pass VALUE|FILE` | Use one passphrase string or a passphrase file |
+| `-pass VALUE\|FILE` | Use one passphrase string or a passphrase file |
 | `-device LIST` | Use one or more GPUs, for example `2`, `2,3`, `0-3` |
 | `-b N` | Force CUDA blocks |
 | `-t N` | Force CUDA threads per block |
@@ -869,7 +869,7 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 | Аргумент | Что делает |
 | --- | --- |
 | `-pbkdf N` | Переопределяет число PBKDF2 итераций. По умолчанию `2048` |
-| `-pass VALUE|FILE` | Одна passphrase строкой или файл passphrase |
+| `-pass VALUE\|FILE` | Одна passphrase строкой или файл passphrase |
 | `-device LIST` | Выбор одной или нескольких GPU, например `2`, `2,3`, `0-3` |
 | `-b N` | Принудительное число CUDA blocks |
 | `-t N` | Принудительное число threads per block |
