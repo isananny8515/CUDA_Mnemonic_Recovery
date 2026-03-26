@@ -65,7 +65,9 @@ It is built for practical recovery work: real wildcard templates, real derivatio
 ## Highlights
 
 - Recover missing BIP39 words with `*` wildcards.
+- Work with mnemonic lengths from `3` to `48` words, as long as the phrase length is a multiple of `3`.
 - Use embedded BIP39 wordlists or force an external `-wordlist FILE`.
+- Auto-pick the matching BIP39 language wordlist and correct common word-entry typos when the intended word is clear.
 - Feed templates inline or from files.
 - Check candidates against exact `-hash`, Bloom filters, XOR filters, and optional CPU-side verification.
 - Build XOR filters with [XorFilter](https://github.com/XopMC/XorFilter) and plug them straight into the recovery flow.
@@ -217,6 +219,9 @@ Rules:
 - use spaces between words
 - use `*` for every unknown word
 - keep the line as a normal mnemonic phrase, only with missing positions replaced
+- valid phrase lengths are `3..48` words and must stay divisible by `3`
+- the tool auto-detects the matching BIP39 language wordlist
+- the parser can correct common typos when the intended BIP39 word is obvious
 
 ### Derivations file
 
@@ -267,19 +272,46 @@ If `-d_type` is omitted, routing stays target-native:
 
 - secp-style targets use the usual BIP32/secp256k1 path
 - Solana and TON stay on their native ed25519-oriented route
+- `-c` still controls the target family that is generated and checked, even when `-d_type` overrides the derivation engine
 
 ### Filters and direct targets
 
 | Option | Meaning |
 | --- | --- |
-| `-hash HEX` | Match an exact target hash or hash prefix |
-| `-bf FILE` | Load a Bloom filter |
-| `-xu FILE` | Load `.xor_u`, the uncompressed XOR filter format |
-| `-xc FILE` | Load `.xor_c`, a compact GPU-side XOR prefilter |
-| `-xuc FILE` | Load `.xor_uc`, an even smaller GPU-side XOR prefilter |
-| `-xh FILE` | Load `.xor_hc`, the smallest GPU-side XOR prefilter |
+| `-hash HEX` | Match an exact target hash or raw target prefix in hex |
+| `-bf FILE` | Load a Bloom filter. Repeatable |
+| `-xu FILE` | Load `.xor_u`, the uncompressed XOR filter format. Repeatable |
+| `-xc FILE` | Load `.xor_c`, a compact GPU-side XOR prefilter. Repeatable |
+| `-xuc FILE` | Load `.xor_uc`, an even smaller GPU-side XOR prefilter. Repeatable |
+| `-xh FILE` | Load `.xor_hc`, the smallest GPU-side XOR prefilter. Repeatable |
 | `-xx FILE` | CPU verify using an uncompressed `.xor_u` filter |
 | `-xb FILE` | CPU verify with Bloom filter |
+
+`-hash` is a hex input. For classic hash160-based families you usually provide the full 20-byte value. For raw 32-byte targets, the tool consumes a hex prefix, so you typically pass the leading bytes of the raw value.
+
+Target-oriented `-hash` guidance:
+
+- `-c c`, `-c u`, `-c s`, `-c r` expect Bitcoin-style `hash160` in hex.
+- `-c x` expects the leading bytes of the raw x-only public key in hex, without `02`, `03`, or `04`.
+- `-c e` expects the Ethereum address in hex, without `0x`.
+- `-c S` expects the leading bytes of the raw ed25519 public key in hex, which means the Solana address must be decoded from base58 first.
+- `-c t` and `-c T` expect the leading bytes of the raw TON account hash in hex, without the `<workchain:>` prefix.
+
+Practical BTC-style exact hash example:
+
+```bash
+CUDA_Mnemonic_Recovery -device 2 -recovery "adapt access alert human kiwi rough pottery level soon funny burst *" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
+```
+
+### Bloom filters
+
+`CUDA_Mnemonic_Recovery` accepts Bloom filters compatible with the formats used by [brainflayer](https://github.com/ryancdotorg/brainflayer) and [Mnemonic_CPP](https://github.com/XopMC/Mnemonic_CPP).
+
+You can add several Bloom filters by repeating `-bf`:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -bf wallet_a.blf -bf wallet_b.blf -c c
+```
 
 ## XOR Filters and XorFilter
 
@@ -290,11 +322,18 @@ Recommended workflow:
 - `.xor_u` is the only XOR format recommended for a full standalone run without extra CPU confirmation.
 - `.xor_c`, `.xor_uc`, and `.xor_hc` are compact GPU prefilters. They are excellent for reducing memory and accelerating broad scans, but they should not be treated as the final truth in a full recovery session.
 - For `.xor_c`, `.xor_uc`, and `.xor_hc`, add `-xx wallet.xor_u` so the survivors are rechecked on the CPU against an uncompressed `.xor_u` filter.
+- You can load several XOR filters of the same family by repeating the corresponding flag.
 
 Practical example:
 
 ```bash
 CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
+```
+
+Multi-filter example:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet_a.xor_c -xc wallet_b.xor_c -xx wallet_master.xor_u -c cus
 ```
 
 That pattern gives you a compact GPU filter on the front end and a precise CPU re-check on the back end.
@@ -385,6 +424,9 @@ The numbers below were measured on this machine after fixing the staged multi-GP
 - exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
 - build: Windows Release, `sm_89`
 - measurement rule: end-to-end wall-clock until the first real `[!] Found:` line
+- hardware: `4x RTX 4090`
+- power limit: all four GPUs were capped to `50% TDP` with MSI Afterburner
+- note: at `100% TDP`, the absolute speed will be higher than the numbers in this table
 
 Benchmark fixture:
 
@@ -483,9 +525,17 @@ Yes. Use `-device LIST`, for example:
 
 ## Responsible Use
 
-This project is intended for legitimate mnemonic recovery workflows only.
+This project is intended only for legitimate recovery of wallets, backups, and seed phrases that belong to you or that you are explicitly authorized to recover.
 
-Use it only when you have the legal right to recover the wallet, phrase, or backup involved. See [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) for the short policy and [`SECURITY.md`](./SECURITY.md) for private vulnerability reporting guidance.
+The author strongly discourages any malicious use of this software. Any unlawful or abusive use is entirely the responsibility of the user. See [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) for the short lawful-use policy and [`SECURITY.md`](./SECURITY.md) for private vulnerability reporting guidance.
+
+## Custom Development
+
+I build custom software on request. If you want changes, extensions, or project-specific adaptations for `CUDA_Mnemonic_Recovery`, you can discuss them with me on Telegram:
+
+- https://t.me/xopmc
+
+This public release is also an example of the kind of performance-oriented software and recovery tooling I can design and implement.
 
 ---
 
@@ -495,7 +545,7 @@ Use it only when you have the legal right to recover the wallet, phrase, or back
 
 Автор: Mikhail Khoroshavin aka "XopMC"
 
-`CUDA_Mnemonic_Recovery` — это специализированный CUDA-инструмент для одной конкретной задачи: восстановление неполных BIP39 mnemonic-фраз с реальной проверкой кандидатов по нужным целям, без лишнего шума и без ощущения “перегруженного комбайна”.
+`CUDA_Mnemonic_Recovery` — это узкоспециализированный CUDA-инструмент для одной конкретной задачи: восстановления неполных BIP39 mnemonic-фраз с реальной проверкой кандидатов по нужным целям.
 
 Он рассчитан на практическую работу: реальные wildcard-шаблоны, реальные derivation-path’ы, реальные фильтры, реальные MultiGPU-запуски и вывод, который остаётся удобным даже в длинной сессии восстановления.
 
@@ -541,7 +591,9 @@ Use it only when you have the legal right to recover the wallet, phrase, or back
 ## Что Умеет Проект
 
 - Восстанавливать BIP39-фразы с пропущенными словами `*`.
+- Работать с фразами длиной от `3` до `48` слов, если общее число слов кратно `3`.
 - Использовать встроенные словари BIP39 или внешний `-wordlist FILE`.
+- Автоматически подбирать подходящий языковой BIP39-словарь и исправлять типичные опечатки в словах, когда нужное слово определяется однозначно.
 - Принимать шаблоны как из командной строки, так и из файлов.
 - Проверять кандидатов по `-hash`, Bloom-фильтрам, XOR-фильтрам и optional CPU verify.
 - Создавать XOR-фильтры с помощью [XorFilter](https://github.com/XopMC/XorFilter) и сразу использовать их в recovery flow.
@@ -693,6 +745,9 @@ adapt access alert human kiwi rough pottery level soon funny * *
 - слова разделяются пробелами
 - каждый неизвестный слот — это отдельный `*`
 - строка должна выглядеть как обычная mnemonic-фраза, только с заменой неизвестных слов на `*`
+- допустимая длина фразы — от `3` до `48` слов, при этом число слов должно быть кратно `3`
+- инструмент автоматически подбирает подходящий языковой BIP39-словарь
+- парсер умеет исправлять типичные опечатки, если нужное слово определяется однозначно
 
 ### Файл derivation-path’ов
 
@@ -743,19 +798,46 @@ wallet-passphrase-example
 
 - secp-ориентированные цели идут через обычный BIP32/secp256k1
 - Solana и TON остаются на своём native ed25519-маршруте
+- `-c` при этом всё равно задаёт именно target family, которую нужно строить и проверять
 
 ### Filters и direct targets
 
 | Аргумент | Что делает |
 | --- | --- |
-| `-hash HEX` | Проверка по точному hash / hash prefix |
-| `-bf FILE` | Загружает Bloom filter |
-| `-xu FILE` | Загружает `.xor_u`, несжатый формат XOR filter |
-| `-xc FILE` | Загружает `.xor_c`, компактный GPU-side XOR prefilter |
-| `-xuc FILE` | Загружает `.xor_uc`, ещё более компактный GPU-side XOR prefilter |
-| `-xh FILE` | Загружает `.xor_hc`, самый компактный GPU-side XOR prefilter |
+| `-hash HEX` | Проверка по точному hash или raw target prefix в hex |
+| `-bf FILE` | Загружает Bloom filter. Аргумент можно повторять |
+| `-xu FILE` | Загружает `.xor_u`, несжатый формат XOR filter. Аргумент можно повторять |
+| `-xc FILE` | Загружает `.xor_c`, компактный GPU-side XOR prefilter. Аргумент можно повторять |
+| `-xuc FILE` | Загружает `.xor_uc`, ещё более компактный GPU-side XOR prefilter. Аргумент можно повторять |
+| `-xh FILE` | Загружает `.xor_hc`, самый компактный GPU-side XOR prefilter. Аргумент можно повторять |
 | `-xx FILE` | CPU verify через несжатый `.xor_u` filter |
 | `-xb FILE` | CPU verify через Bloom filter |
+
+`-hash` принимает hex-строку. Для classic hash160-семейств обычно используется весь 20-byte hash. Для raw 32-byte targets инструмент работает как prefix matcher, поэтому обычно передаются начальные байты raw значения.
+
+Практическая подсказка по `-hash` для `-c`:
+
+- `-c c`, `-c u`, `-c s`, `-c r` ждут Bitcoin-style `hash160` в hex.
+- `-c x` ждёт начальные байты raw x-only публичного ключа в hex, без `02`, `03` и `04`.
+- `-c e` ждёт Ethereum address в hex без `0x`.
+- `-c S` ждёт начальные байты raw ed25519 public key в hex, то есть Solana-адрес нужно сначала декодировать из base58.
+- `-c t` и `-c T` ждут начальные байты raw TON account hash в hex, без `<workchain:>`.
+
+Практический BTC-style пример с точным hash:
+
+```bash
+CUDA_Mnemonic_Recovery -device 2 -recovery "adapt access alert human kiwi rough pottery level soon funny burst *" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
+```
+
+### Bloom filters
+
+`CUDA_Mnemonic_Recovery` принимает Bloom-фильтры, совместимые с форматами, которые используют [brainflayer](https://github.com/ryancdotorg/brainflayer) и [Mnemonic_CPP](https://github.com/XopMC/Mnemonic_CPP).
+
+Можно подключать несколько Bloom-фильтров, просто повторяя `-bf`:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -bf wallet_a.blf -bf wallet_b.blf -c c
+```
 
 ## XOR Фильтры И XorFilter
 
@@ -766,11 +848,18 @@ wallet-passphrase-example
 - `.xor_u` — единственный XOR-формат, который подходит как финальный standalone-вариант без дополнительной CPU-проверки.
 - `.xor_c`, `.xor_uc` и `.xor_hc` — это компактные GPU-side prefilter’ы. Они отлично подходят для экономии памяти и ускорения широкого сканирования, но их нельзя считать финальной истиной в полноценной recovery-сессии.
 - Для `.xor_c`, `.xor_uc` и `.xor_hc` добавляйте `-xx wallet.xor_u`, чтобы прошедшие кандидаты перепроверялись на CPU по несжатому `.xor_u`.
+- Несколько XOR-фильтров одного семейства можно подключать повторением соответствующего флага.
 
 Практический пример:
 
 ```bash
 CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
+```
+
+Пример с несколькими XOR-фильтрами:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet_a.xor_c -xc wallet_b.xor_c -xx wallet_master.xor_u -c cus
 ```
 
 Такой шаблон даёт компактный GPU-фильтр на входе и точную CPU-перепроверку на выходе.
@@ -857,10 +946,13 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 
 - мнемоника: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
 - derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
-- family: `-c c`
+- target family: `-c c`
 - exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
 - сборка: Windows Release, `sm_89`
 - правило измерения: полный wall-clock до первой реальной строки `[!] Found:`
+- железо: `4x RTX 4090`
+- ограничение питания: все четыре карты были ограничены до `50% TDP` через MSI Afterburner
+- примечание: при `100% TDP` абсолютная скорость будет выше, чем в этой таблице
 
 Основной benchmark-fixture:
 
@@ -959,6 +1051,14 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 
 ## Responsible Use
 
-Проект предназначен только для легитимных сценариев восстановления mnemonic-фраз.
+Проект предназначен только для легитимного восстановления кошельков, backup-фраз и seed-фраз, которые принадлежат вам или на восстановление которых у вас есть явное разрешение владельца.
 
-Используйте его только там, где у вас есть законное право восстанавливать соответствующий seed, backup или wallet. См. [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) и [`SECURITY.md`](./SECURITY.md).
+Я настоятельно не рекомендую использовать это ПО в злонамеренных целях. Полная ответственность за любое незаконное или злоупотребляющее использование лежит исключительно на пользователе. См. [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) и [`SECURITY.md`](./SECURITY.md).
+
+## Разработка На Заказ
+
+Я занимаюсь разработкой ПО на заказ. Если вам нужны доработки, адаптация или развитие `CUDA_Mnemonic_Recovery` под конкретную задачу, это можно обсудить со мной в Telegram:
+
+- https://t.me/xopmc
+
+Это ПО вынесено в публичный доступ в том числе как пример задач и систем, с которыми я умею работать.
