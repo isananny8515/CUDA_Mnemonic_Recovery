@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
   <rect width="1280" height="640" fill="#08111f"/>
   <text x="80" y="88" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">Recovery Pipeline</text>
-  <text x="80" y="126" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="20">From incomplete mnemonic template to validated hit.</text>
+  <text x="80" y="126" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="20">From incomplete mnemonic template</text>
+  <text x="80" y="154" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="20">to validated hit.</text>
   <g font-family="Segoe UI, Arial, sans-serif">
     <rect x="80" y="188" width="220" height="120" rx="24" fill="#0f172a" stroke="#38bdf8"/>
     <text x="112" y="234" fill="#f8fafc" font-size="24" font-weight="700">Template Input</text>
@@ -26,7 +27,9 @@
   <path d="M300 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
   <path d="M590 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
   <path d="M880 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
-  <rect x="330" y="404" width="620" height="124" rx="28" fill="#0b1321" stroke="#1e293b"/>
-  <text x="370" y="456" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">Async save path</text>
-  <text x="370" y="492" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">GPU batches keep moving while CPU-side result formatting, optional verify, and file output run in background save workers.</text>
+  <rect x="300" y="394" width="680" height="152" rx="28" fill="#0b1321" stroke="#1e293b"/>
+  <text x="340" y="446" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">Async save path</text>
+  <text x="340" y="482" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="19">GPU batches keep moving while CPU-side formatting,</text>
+  <text x="340" y="512" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="19">optional verify, and file output run in background</text>
+  <text x="340" y="542" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="19">save workers.</text>
 </svg>
