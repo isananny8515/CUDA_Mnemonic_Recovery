@@ -361,34 +361,33 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 - агрегирует итоговые tested / checksum-valid totals
 - сохраняет async save workers до конца выполнения
 
-### Воспроизводимый benchmark fixture
+### Методика benchmark для Multi-GPU
 
-Fixture: [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt)
+В репозитории сейчас есть два разных Multi-GPU fixture:
 
-Референсная benchmark-команда:
+- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) — короткий smoke-fixture для проверки counters, split по слотам и форматирования вывода
+- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) — более тяжёлый fixture, с которого уже разумно начинать реальную проверку масштабирования Multi-GPU
+
+Почему это важно:
+
+- сценарий с `2 пропущенными словами` слишком короткий для честной оценки масштабирования
+- в таком micro-benchmark заметно доминируют инициализация, scheduling и save-thread overhead
+- если нужны честные Multi-GPU цифры, тестировать лучше минимум на `3 пропущенных словах`, а ещё лучше на более тяжёлых реальных задачах
+
+Референсная команда для серьёзного Multi-GPU benchmark:
 
 ```bash
-CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-2missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
+CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-3missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
 ```
 
-Локальный замер на этой машине после фикса multi-GPU totals:
+Как мерить корректно:
 
-| GPU | Устройства | Нагрузка | Wall-clock |
-| --- | --- | --- | --- |
-| 1 | `2` | 8 шаблонов, по 2 пропущенных слова, default derivations, exact hash target | `5.42 s` |
-| 2 | `2,3` | Та же нагрузка | `4.62 s` |
-| 4 | `0,1,2,3` | Та же нагрузка | `4.13 s` |
+- сравнивать `1 GPU`, `2 GPU` и `4 GPU` на абсолютно одинаковом fixture и одинаковых аргументах
+- смотреть на полный wall-clock, а не только на live speed line
+- держать выбранные GPU свободными от другой нагрузки
+- `8x-2missing` считать smoke-тестом, а не benchmark для публикации
 
-Что это даёт на этом коротком benchmark:
-
-- `2 GPU`: примерно `1.17x`
-- `4 GPU`: примерно `1.31x`
-
-Важная честная оговорка:
-
-- это реальные локальные измерения, а не маркетинговые цифры
-- benchmark короткий и заметно платит за инициализацию GPU
-- на более длинных и тяжёлых задачах масштабирование может выглядеть иначе
+В README больше не публикуются “официальные” scaling-цифры, снятые с короткого `2 missing words` сценария.
 
 ## Troubleshooting
 

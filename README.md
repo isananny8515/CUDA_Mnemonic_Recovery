@@ -361,34 +361,33 @@ What the tool does in multi-GPU mode:
 - aggregates final tested / checksum-valid totals
 - keeps async save workers alive until the end of the run
 
-### Reproducible benchmark fixture
+### Benchmark methodology
 
-Fixture file: [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt)
+The repository currently ships two different Multi-GPU fixtures:
 
-Reference benchmark command:
+- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) is a short smoke fixture for validating counters, slot split, and output formatting
+- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) is the heavier fixture to start from when you want a more meaningful Multi-GPU scaling check
+
+Why the distinction matters:
+
+- a `2 missing words` run is too short to represent real Multi-GPU scaling well
+- initialization, scheduling, and save-thread overhead dominate that kind of micro-benchmark
+- if you want honest scaling numbers, use at least `3 missing words`, and preferably even heavier real workloads
+
+Reference command for a serious Multi-GPU benchmark:
 
 ```bash
-CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-2missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
+CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-3missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
 ```
 
-Local measurement on this machine after fixing multi-GPU totals:
+Recommended measurement rules:
 
-| GPUs | Devices | Workload | Wall-clock |
-| --- | --- | --- | --- |
-| 1 | `2` | 8 templates, 2 missing words each, default derivations, exact hash target | `5.42 s` |
-| 2 | `2,3` | Same workload | `4.62 s` |
-| 4 | `0,1,2,3` | Same workload | `4.13 s` |
+- compare `1 GPU`, `2 GPU`, and `4 GPU` with the exact same fixture and arguments
+- measure full wall-clock runtime, not only the live speed line
+- keep the selected GPUs otherwise idle
+- treat the `8x-2missing` fixture as a smoke test, not as a publication-grade benchmark
 
-Measured speedup on that short benchmark:
-
-- `2 GPU`: about `1.17x`
-- `4 GPU`: about `1.31x`
-
-Important note:
-
-- these numbers are honest local measurements, not marketing numbers
-- this workload is short and pays a noticeable GPU initialization cost
-- longer or heavier workloads can scale differently
+The README intentionally does not publish official scaling numbers from the short `2 missing words` run anymore.
 
 ## Troubleshooting
 
