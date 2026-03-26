@@ -137,9 +137,9 @@ Each archive contains these build profiles:
 | `sm_86-dlto` | RTX 30xx / Ampere | Dedicated Ampere build |
 | `sm_89-dlto` | RTX 40xx / Ada | Dedicated Ada build |
 | `sm_120-dlto` | RTX 50xx / Blackwell | Dedicated Blackwell build |
-| `universal-sm_86-sm_120-dlto` | RTX 30xx / 40xx / 50xx | One binary for modern cards from `sm_86` through `sm_120` |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One binary for modern cards from `sm_86` through `sm_120` |
 
-Release bundles are built with CUDA `12.8` and CUDA device link-time optimization (`-dlto`) enabled. That choice is deliberate: CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
+Release bundles are built with CUDA `12.8`. The dedicated single-architecture profiles use CUDA device link-time optimization (`-dlto`), while the `universal-sm_86-sm_120` build intentionally ships without `-dlto`. CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
 
 The packaged binaries are prepared to be easy to move between machines:
 
@@ -570,9 +570,9 @@ GitHub Actions подготавливает два дистрибутивных 
 | `sm_86-dlto` | RTX 30xx / Ampere | Отдельная сборка под Ampere |
 | `sm_89-dlto` | RTX 40xx / Ada | Отдельная сборка под Ada |
 | `sm_120-dlto` | RTX 50xx / Blackwell | Отдельная сборка под Blackwell |
-| `universal-sm_86-sm_120-dlto` | RTX 30xx / 40xx / 50xx | Один бинарник для `sm_86`...`sm_120` |
+| `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один бинарник для `sm_86`...`sm_120` |
 
-Release-сборки делаются на CUDA `12.8` с включённым CUDA device link-time optimization (`-dlto`). Это сделано специально: CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
+Release-сборки делаются на CUDA `12.8`. Для отдельных single-arch профилей `CUDA device link-time optimization` (`-dlto`) остаётся включённым, а для `universal-sm_86-sm_120` он специально отключён. CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
 
 Пакеты подготовлены так, чтобы их было удобно переносить между машинами:
 

@@ -19,8 +19,10 @@ jobs:
         include:
           - label: sm_89-dlto
             archs: "89"
-          - label: universal-sm_86-sm_120-dlto
+            dlto: "ON"
+          - label: universal-sm_86-sm_120
             archs: "86;89;120"
+            dlto: "OFF"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +36,7 @@ jobs:
         run: >-
           cmake --preset linux-release
           -D CMAKE_CUDA_ARCHITECTURES="${{ matrix.archs }}"
-          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=${{ matrix.dlto }}
 
       - name: Build
         run: cmake --build --preset linux-release
@@ -48,8 +50,10 @@ jobs:
         include:
           - label: sm_89-dlto
             archs: "89"
-          - label: universal-sm_86-sm_120-dlto
+            dlto: "ON"
+          - label: universal-sm_86-sm_120
             archs: "86;89;120"
+            dlto: "OFF"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,7 +72,7 @@ jobs:
         run: >-
           cmake --preset windows-release
           -D CMAKE_CUDA_ARCHITECTURES='${{ matrix.archs }}'
-          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=${{ matrix.dlto }}
 
       - name: Build
         shell: powershell

@@ -25,21 +25,33 @@ jobs:
           - label: sm_61-dlto
             archs: "61"
             family: "GTX 10xx / Pascal"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_75-dlto
             archs: "75"
             family: "RTX 20xx / Turing"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_86-dlto
             archs: "86"
             family: "RTX 30xx / Ampere"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_89-dlto
             archs: "89"
             family: "RTX 40xx / Ada"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_120-dlto
             archs: "120"
             family: "RTX 50xx / Blackwell"
-          - label: universal-sm_86-sm_120-dlto
+            dlto: "ON"
+            dlto_note: "enabled"
+          - label: universal-sm_86-sm_120
             archs: "86;89;120"
             family: "One binary for RTX 30xx / 40xx / 50xx"
+            dlto: "OFF"
+            dlto_note: "disabled"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,7 +65,7 @@ jobs:
         run: >-
           cmake --preset linux-release
           -D CMAKE_CUDA_ARCHITECTURES="${{ matrix.archs }}"
-          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=${{ matrix.dlto }}
 
       - name: Build
         run: cmake --build --preset linux-release
@@ -64,7 +76,7 @@ jobs:
           PKG_DIR="out/pkg/linux/${{ matrix.label }}"
           mkdir -p "$PKG_DIR"
           cp out/build/linux-release/bin/CUDA_Mnemonic_Recovery "$PKG_DIR/CUDA_Mnemonic_Recovery"
-          cp README.md README.ru.md LICENSE.txt THIRD_PARTY_NOTICES.md RESPONSIBLE_USE.md SECURITY.md "$PKG_DIR/"
+          cp README.md LICENSE.txt THIRD_PARTY_NOTICES.md RESPONSIBLE_USE.md SECURITY.md "$PKG_DIR/"
           cp -R examples "$PKG_DIR/examples"
           cat > "$PKG_DIR/BUILD.txt" <<EOF
           CUDA_Mnemonic_Recovery build profile
@@ -72,7 +84,7 @@ jobs:
           CUDA Toolkit: ${CUDA_VERSION}
           Architecture profile: ${{ matrix.label }}
           CUDA architectures: ${{ matrix.archs }}
-          Device LTO: enabled
+          Device LTO: ${{ matrix.dlto_note }}
           Intended hardware: ${{ matrix.family }}
           Runtime notes: static CUDA runtime is enabled. A compatible NVIDIA driver is still required.
           Universal note: the universal sm_86-sm_120 bundle covers RTX 30xx through RTX 50xx. RTX 20xx uses the dedicated sm_75 build.
@@ -95,21 +107,33 @@ jobs:
           - label: sm_61-dlto
             archs: "61"
             family: "GTX 10xx / Pascal"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_75-dlto
             archs: "75"
             family: "RTX 20xx / Turing"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_86-dlto
             archs: "86"
             family: "RTX 30xx / Ampere"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_89-dlto
             archs: "89"
             family: "RTX 40xx / Ada"
+            dlto: "ON"
+            dlto_note: "enabled"
           - label: sm_120-dlto
             archs: "120"
             family: "RTX 50xx / Blackwell"
-          - label: universal-sm_86-sm_120-dlto
+            dlto: "ON"
+            dlto_note: "enabled"
+          - label: universal-sm_86-sm_120
             archs: "86;89;120"
             family: "One binary for RTX 30xx / 40xx / 50xx"
+            dlto: "OFF"
+            dlto_note: "disabled"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -128,7 +152,7 @@ jobs:
         run: >-
           cmake --preset windows-release
           -D CMAKE_CUDA_ARCHITECTURES='${{ matrix.archs }}'
-          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=${{ matrix.dlto }}
 
       - name: Build
         shell: powershell
@@ -142,7 +166,7 @@ jobs:
           $binary = Get-ChildItem -Recurse (Join-Path $pwd "out/build/windows-release/bin") -Filter "CUDA_Mnemonic_Recovery.exe" | Select-Object -First 1
           if (-not $binary) { throw "Built executable not found." }
           Copy-Item $binary.FullName (Join-Path $pkgDir "CUDA_Mnemonic_Recovery.exe") -Force
-          Copy-Item README.md, README.ru.md, LICENSE.txt, THIRD_PARTY_NOTICES.md, RESPONSIBLE_USE.md, SECURITY.md $pkgDir -Force
+          Copy-Item README.md, LICENSE.txt, THIRD_PARTY_NOTICES.md, RESPONSIBLE_USE.md, SECURITY.md $pkgDir -Force
           Copy-Item examples (Join-Path $pkgDir "examples") -Recurse -Force
           @"
           CUDA_Mnemonic_Recovery build profile
@@ -150,7 +174,7 @@ jobs:
           CUDA Toolkit: $env:CUDA_VERSION
           Architecture profile: ${{ matrix.label }}
           CUDA architectures: ${{ matrix.archs }}
-          Device LTO: enabled
+          Device LTO: ${{ matrix.dlto_note }}
           Intended hardware: ${{ matrix.family }}
           Runtime notes: static MSVC runtime and static CUDA runtime are enabled. A compatible NVIDIA driver is still required.
           Universal note: the universal sm_86-sm_120 bundle covers RTX 30xx through RTX 50xx. RTX 20xx uses the dedicated sm_75 build.
