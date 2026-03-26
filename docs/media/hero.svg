@@ -39,7 +39,7 @@
     <text x="840" y="246" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="54" font-weight="700">CUDA_Mnemonic_Recovery</text>
     <text x="840" y="300" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="28">Focused mnemonic recovery for real-world wallet workflows.</text>
     <text x="840" y="362" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="24">Recover missing BIP39 words, validate against hashes or filters,</text>
-    <text x="840" y="398" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="24">and scale from one GPU to several without dragging unrelated toolkit modes.</text>
+    <text x="840" y="398" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="24">and scale from one GPU to several in a clean recovery-only workflow.</text>
     <rect x="840" y="454" width="320" height="54" rx="27" fill="url(#glow)"/>
     <text x="872" y="489" fill="#04101d" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Recovery-focused public release</text>
     <text x="840" y="566" fill="#94a3b8" font-family="Segoe UI, Arial, sans-serif" font-size="22">Bitcoin • Ethereum • Solana • TON</text>

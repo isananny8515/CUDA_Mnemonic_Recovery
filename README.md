@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="100%">
+  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="960">
 </p>
 
 <p align="center">
@@ -18,47 +18,47 @@
 
 Author: Mikhail Khoroshavin aka "XopMC"
 
-`CUDA_Mnemonic_Recovery` is a focused CUDA tool for one very specific job: recover incomplete BIP39 mnemonic phrases quickly, validate them against real targets, and keep the workflow clean enough to trust in a real recovery session.
+`CUDA_Mnemonic_Recovery` is a focused CUDA tool for one very specific job: recover incomplete BIP39 mnemonic phrases quickly, validate them against real targets, and keep the workflow clear enough to trust in a real recovery session.
 
-This project was split out from a larger toolkit so the recovery path could stand on its own without dragging along unrelated modes, legacy switches, and experimental branches. The result is a much cleaner public-facing codebase with the same recovery mindset: serious input handling, familiar CLI style, filter support, target-specific derivation logic, and working multi-GPU execution.
+It is built for practical recovery work: real wildcard templates, real derivation lists, real filters, real multi-GPU runs, and output that stays easy to read when a long session is finally producing hits.
 
 ## Why This Tool Exists
 
 - You have a real mnemonic backup with missing words marked as `*`.
 - You want to validate candidates against exact hashes, Bloom filters, or XOR filters instead of scrolling through noise.
 - You want one tool that can check Bitcoin, Ethereum, Solana, and TON-oriented targets from the same recovery flow.
-- You want multi-GPU support without turning the codebase into a giant general-purpose crypto toolkit again.
+- You want multi-GPU support without losing clarity or turning the workflow into a maze of unrelated modes.
 
 ## Visual Tour
 
 ### Command Help
 
 <p>
-  <img src="./docs/media/help-terminal.svg" alt="Command help screenshot" width="100%">
+  <img src="./docs/media/help-terminal.svg" alt="Command help screenshot" width="920">
 </p>
 
 ### Single-GPU Recovery
 
 <p>
-  <img src="./docs/media/single-recovery.svg" alt="Single GPU recovery example" width="100%">
+  <img src="./docs/media/single-recovery.svg" alt="Single GPU recovery example" width="920">
 </p>
 
 ### Multi-GPU Recovery
 
 <p>
-  <img src="./docs/media/multigpu-recovery.svg" alt="Multi GPU recovery example" width="100%">
+  <img src="./docs/media/multigpu-recovery.svg" alt="Multi GPU recovery example" width="920">
 </p>
 
 ### Recovery Pipeline
 
 <p>
-  <img src="./docs/media/pipeline-diagram.svg" alt="Recovery pipeline diagram" width="100%">
+  <img src="./docs/media/pipeline-diagram.svg" alt="Recovery pipeline diagram" width="920">
 </p>
 
 ### Multi-GPU Work Split
 
 <p>
-  <img src="./docs/media/multigpu-diagram.svg" alt="Multi GPU work split diagram" width="100%">
+  <img src="./docs/media/multigpu-diagram.svg" alt="Multi GPU work split diagram" width="920">
 </p>
 
 ## Highlights
@@ -67,10 +67,11 @@ This project was split out from a larger toolkit so the recovery path could stan
 - Use embedded BIP39 wordlists or force an external `-wordlist FILE`.
 - Feed templates inline or from files.
 - Check candidates against exact `-hash`, Bloom filters, XOR filters, and optional CPU-side verification.
+- Build XOR filters with [XorFilter](https://github.com/XopMC/XorFilter) and plug them straight into the recovery flow.
 - Select Bitcoin-like, Ethereum, Solana, and TON target families with one CLI.
 - Override derivation routing with `-d_type` when wallet behavior does not match the usual coin-native path.
 - Run one GPU or several GPUs with the same recovery workflow.
-- Keep save/output behavior close to the original toolkit style while using a cleaner recovery-only codebase.
+- Keep save/output compact, readable, and practical for long recovery sessions.
 
 ## Supported Target Families
 
@@ -119,6 +120,32 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
+## Prebuilt GitHub Bundles
+
+GitHub Actions is set up to produce two distribution archives:
+
+- `CUDA_Mnemonic_Recovery-windows-builds.zip`
+- `CUDA_Mnemonic_Recovery-linux-builds.tar.gz`
+
+Each archive contains these build profiles:
+
+| Profile | Intended cards | Notes |
+| --- | --- | --- |
+| `sm_61-dlto` | GTX 10xx / Pascal | Dedicated legacy-friendly build |
+| `sm_75-dlto` | RTX 20xx / Turing | Best fit for RTX 20xx cards |
+| `sm_86-dlto` | RTX 30xx / Ampere | Dedicated Ampere build |
+| `sm_89-dlto` | RTX 40xx / Ada | Dedicated Ada build |
+| `sm_120-dlto` | RTX 50xx / Blackwell | Dedicated Blackwell build |
+| `universal-sm_86-sm_120-dlto` | RTX 30xx / 40xx / 50xx | One binary for modern cards from `sm_86` through `sm_120` |
+
+Release bundles are built with CUDA `12.8` and CUDA device link-time optimization (`-dlto`) enabled. That choice is deliberate: CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
+
+The packaged binaries are prepared to be easy to move between machines:
+
+- Windows builds use the static MSVC runtime and static CUDA runtime.
+- Linux builds use the static CUDA runtime plus static `libstdc++` / `libgcc`.
+- A compatible NVIDIA driver is still required on the target machine.
+
 ## Quick Start
 
 ### Recover one missing word from the command line
@@ -142,7 +169,7 @@ CUDA_Mnemonic_Recovery -device 2 -recovery "abandon abandon abandon abandon aban
 ### Recover with an XOR filter
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xu wallet.xor_u -c cus
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
 ```
 
 ### Recover with passphrases from a file
@@ -233,12 +260,30 @@ If `-d_type` is omitted, routing stays target-native:
 | --- | --- |
 | `-hash HEX` | Match an exact target hash or hash prefix |
 | `-bf FILE` | Load a Bloom filter |
-| `-xu FILE` | Load `.xor_u` |
-| `-xc FILE` | Load `.xor_c` |
-| `-xuc FILE` | Load `.xor_uc` |
-| `-xh FILE` | Load `.xor_hc` |
-| `-xx FILE` | CPU verify with XOR filter |
+| `-xu FILE` | Load `.xor_u`, the uncompressed XOR filter format |
+| `-xc FILE` | Load `.xor_c`, a compact GPU-side XOR prefilter |
+| `-xuc FILE` | Load `.xor_uc`, an even smaller GPU-side XOR prefilter |
+| `-xh FILE` | Load `.xor_hc`, the smallest GPU-side XOR prefilter |
+| `-xx FILE` | CPU verify using an uncompressed `.xor_u` filter |
 | `-xb FILE` | CPU verify with Bloom filter |
+
+## XOR Filters and XorFilter
+
+If you want XOR filters for this project, generate them with [XorFilter](https://github.com/XopMC/XorFilter).
+
+Recommended workflow:
+
+- `.xor_u` is the only XOR format recommended for a full standalone run without extra CPU confirmation.
+- `.xor_c`, `.xor_uc`, and `.xor_hc` are compact GPU prefilters. They are excellent for reducing memory and accelerating broad scans, but they should not be treated as the final truth in a full recovery session.
+- For `.xor_c`, `.xor_uc`, and `.xor_hc`, add `-xx wallet.xor_u` so the survivors are rechecked on the CPU against an uncompressed `.xor_u` filter.
+
+Practical example:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
+```
+
+That pattern gives you a compact GPU filter on the front end and a precise CPU re-check on the back end.
 
 ### Runtime and output
 
@@ -257,7 +302,7 @@ If `-d_type` is omitted, routing stays target-native:
 
 ## Understanding `-save`
 
-The tool keeps toolkit-style `Found` lines.
+The tool keeps compact colon-separated `Found` lines.
 
 Without `-save`, the last field is the raw matched hash/target bytes:
 

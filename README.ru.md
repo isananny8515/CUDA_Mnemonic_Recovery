@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="100%">
+  <img src="./docs/media/hero.svg" alt="CUDA_Mnemonic_Recovery hero" width="960">
 </p>
 
 <p align="center">
@@ -18,47 +18,47 @@
 
 Автор: Mikhail Khoroshavin aka "XopMC"
 
-`CUDA_Mnemonic_Recovery` — это специализированный CUDA-инструмент для одной конкретной задачи: восстановление неполных BIP39 mnemonic-фраз с реальной проверкой кандидатов по нужным целям, без мусора от лишних режимов и без ощущения “перегруженного комбайна”.
+`CUDA_Mnemonic_Recovery` — это специализированный CUDA-инструмент для одной конкретной задачи: восстановление неполных BIP39 mnemonic-фраз с реальной проверкой кандидатов по нужным целям, без лишнего шума и без ощущения “перегруженного комбайна”.
 
-Проект был выделен из большого toolkit’а именно затем, чтобы recovery-режим жил отдельно, оставался понятным, поддерживаемым и пригодным к публичной публикации. Здесь нет попытки быть “всем для всех” — только аккуратно доведённый recovery workflow.
+Он рассчитан на практическую работу: реальные wildcard-шаблоны, реальные derivation-path’ы, реальные фильтры, реальные MultiGPU-запуски и вывод, который остаётся удобным даже в длинной сессии восстановления.
 
 ## Для Чего Этот Проект
 
 - У вас есть реальная BIP39-фраза, где часть слов потеряна и заменена на `*`.
 - Вы хотите проверять кандидатов не вручную, а по реальному `-hash`, Bloom/XOR-фильтрам или CPU verify.
 - Вам нужен один recovery flow для Bitcoin, Ethereum, Solana и TON.
-- Вам нужна MultiGPU-поддержка, но без возврата к монолитному старому toolkit-дереву.
+- Вам нужна MultiGPU-поддержка, но без хаоса из несвязанных режимов и случайных веток.
 
 ## Визуальный Обзор
 
 ### Меню Помощи
 
 <p>
-  <img src="./docs/media/help-terminal.svg" alt="Скриншот help" width="100%">
+  <img src="./docs/media/help-terminal.svg" alt="Скриншот help" width="920">
 </p>
 
 ### Обычный Recovery Запуск
 
 <p>
-  <img src="./docs/media/single-recovery.svg" alt="Скриншот single GPU recovery" width="100%">
+  <img src="./docs/media/single-recovery.svg" alt="Скриншот single GPU recovery" width="920">
 </p>
 
 ### Multi-GPU Recovery
 
 <p>
-  <img src="./docs/media/multigpu-recovery.svg" alt="Скриншот multi GPU recovery" width="100%">
+  <img src="./docs/media/multigpu-recovery.svg" alt="Скриншот multi GPU recovery" width="920">
 </p>
 
 ### Схема Recovery Pipeline
 
 <p>
-  <img src="./docs/media/pipeline-diagram.svg" alt="Схема recovery pipeline" width="100%">
+  <img src="./docs/media/pipeline-diagram.svg" alt="Схема recovery pipeline" width="920">
 </p>
 
 ### Схема Multi-GPU Разделения Нагрузки
 
 <p>
-  <img src="./docs/media/multigpu-diagram.svg" alt="Схема multi GPU split" width="100%">
+  <img src="./docs/media/multigpu-diagram.svg" alt="Схема multi GPU split" width="920">
 </p>
 
 ## Что Умеет Проект
@@ -67,10 +67,11 @@
 - Использовать встроенные словари BIP39 или внешний `-wordlist FILE`.
 - Принимать шаблоны как из командной строки, так и из файлов.
 - Проверять кандидатов по `-hash`, Bloom-фильтрам, XOR-фильтрам и optional CPU verify.
+- Создавать XOR-фильтры с помощью [XorFilter](https://github.com/XopMC/XorFilter) и сразу использовать их в recovery flow.
 - Работать с target-семействами Bitcoin-like, Ethereum, Solana и TON.
 - Переопределять тип derivation через `-d_type`, если кошелёк использует не стандартную схему.
 - Работать на одной GPU или сразу на нескольких.
-- Сохранять toolkit-style `Found` вывод, но в гораздо более чистом recovery-only проекте.
+- Получать компактный и практичный `Found` вывод, удобный для длинных recovery-сессий.
 
 ## Поддерживаемые Target Families
 
@@ -119,6 +120,32 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
+## Готовые GitHub-Сборки
+
+GitHub Actions подготавливает два дистрибутивных архива:
+
+- `CUDA_Mnemonic_Recovery-windows-builds.zip`
+- `CUDA_Mnemonic_Recovery-linux-builds.tar.gz`
+
+Внутри каждого архива лежат такие профили:
+
+| Профиль | Для каких карт | Примечание |
+| --- | --- | --- |
+| `sm_61-dlto` | GTX 10xx / Pascal | Отдельная сборка для старших Pascal-карт |
+| `sm_75-dlto` | RTX 20xx / Turing | Лучший выбор для RTX 20xx |
+| `sm_86-dlto` | RTX 30xx / Ampere | Отдельная сборка под Ampere |
+| `sm_89-dlto` | RTX 40xx / Ada | Отдельная сборка под Ada |
+| `sm_120-dlto` | RTX 50xx / Blackwell | Отдельная сборка под Blackwell |
+| `universal-sm_86-sm_120-dlto` | RTX 30xx / 40xx / 50xx | Один бинарник для `sm_86`...`sm_120` |
+
+Release-сборки делаются на CUDA `12.8` с включённым CUDA device link-time optimization (`-dlto`). Это сделано специально: CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
+
+Пакеты подготовлены так, чтобы их было удобно переносить между машинами:
+
+- Windows-сборки используют статический MSVC runtime и статический CUDA runtime.
+- Linux-сборки используют статический CUDA runtime и статические `libstdc++` / `libgcc`.
+- Совместимый NVIDIA driver на целевой машине всё равно обязателен.
+
 ## Быстрый Старт
 
 ### Восстановление одного пропущенного слова из командной строки
@@ -142,7 +169,7 @@ CUDA_Mnemonic_Recovery -device 2 -recovery "abandon abandon abandon abandon aban
 ### Проверка через XOR filter
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xu wallet.xor_u -c cus
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
 ```
 
 ### Recovery с passphrase из файла
@@ -233,12 +260,30 @@ wallet-passphrase-example
 | --- | --- |
 | `-hash HEX` | Проверка по точному hash / hash prefix |
 | `-bf FILE` | Загружает Bloom filter |
-| `-xu FILE` | Загружает `.xor_u` |
-| `-xc FILE` | Загружает `.xor_c` |
-| `-xuc FILE` | Загружает `.xor_uc` |
-| `-xh FILE` | Загружает `.xor_hc` |
-| `-xx FILE` | CPU verify через XOR filter |
+| `-xu FILE` | Загружает `.xor_u`, несжатый формат XOR filter |
+| `-xc FILE` | Загружает `.xor_c`, компактный GPU-side XOR prefilter |
+| `-xuc FILE` | Загружает `.xor_uc`, ещё более компактный GPU-side XOR prefilter |
+| `-xh FILE` | Загружает `.xor_hc`, самый компактный GPU-side XOR prefilter |
+| `-xx FILE` | CPU verify через несжатый `.xor_u` filter |
 | `-xb FILE` | CPU verify через Bloom filter |
+
+## XOR Фильтры И XorFilter
+
+Если вам нужны XOR-фильтры для этого проекта, создавать их лучше через [XorFilter](https://github.com/XopMC/XorFilter).
+
+Рекомендуемая схема:
+
+- `.xor_u` — единственный XOR-формат, который подходит как финальный standalone-вариант без дополнительной CPU-проверки.
+- `.xor_c`, `.xor_uc` и `.xor_hc` — это компактные GPU-side prefilter’ы. Они отлично подходят для экономии памяти и ускорения широкого сканирования, но их нельзя считать финальной истиной в полноценной recovery-сессии.
+- Для `.xor_c`, `.xor_uc` и `.xor_hc` добавляйте `-xx wallet.xor_u`, чтобы прошедшие кандидаты перепроверялись на CPU по несжатому `.xor_u`.
+
+Практический пример:
+
+```bash
+CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt -xc wallet.xor_c -xx wallet.xor_u -c cus
+```
+
+Такой шаблон даёт компактный GPU-фильтр на входе и точную CPU-перепроверку на выходе.
 
 ### Runtime и вывод
 
@@ -257,7 +302,7 @@ wallet-passphrase-example
 
 ## Как Работает `-save`
 
-Инструмент сохраняет toolkit-style строки `Found`.
+Инструмент сохраняет компактные `Found` строки в плоском формате через `:`.
 
 Без `-save` последний сегмент строки — это raw matched hash/target bytes:
 

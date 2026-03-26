@@ -9,10 +9,18 @@ on:
 
 jobs:
   linux:
-    name: Linux CUDA Build
+    name: Linux ${{ matrix.label }}
     runs-on: ubuntu-latest
     container:
-      image: nvidia/cuda:13.1.1-devel-ubuntu22.04
+      image: nvidia/cuda:12.8.0-devel-ubuntu22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: sm_89-dlto
+            archs: "89"
+          - label: universal-sm_86-sm_120-dlto
+            archs: "86;89;120"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,22 +31,33 @@ jobs:
           apt-get install -y cmake ninja-build g++ make
 
       - name: Configure
-        run: cmake --preset linux-release -D CMAKE_CUDA_ARCHITECTURES=89
+        run: >-
+          cmake --preset linux-release
+          -D CMAKE_CUDA_ARCHITECTURES="${{ matrix.archs }}"
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
 
       - name: Build
         run: cmake --build --preset linux-release
 
   windows:
-    name: Windows CUDA Build
+    name: Windows ${{ matrix.label }}
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: sm_89-dlto
+            archs: "89"
+          - label: universal-sm_86-sm_120-dlto
+            archs: "86;89;120"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.24
+        uses: Jimver/cuda-toolkit@v0.2.30
         with:
-          cuda: "13.1.0"
+          cuda: "12.8.0"
           method: "network"
 
       - name: Setup MSBuild
@@ -46,7 +65,10 @@ jobs:
 
       - name: Configure
         shell: powershell
-        run: cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
+        run: >-
+          cmake --preset windows-release
+          -D CMAKE_CUDA_ARCHITECTURES='${{ matrix.archs }}'
+          -D CUDA_MNEMONIC_RECOVERY_ENABLE_DLTO=ON
 
       - name: Build
         shell: powershell
