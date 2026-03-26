@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900">
+  <rect width="1280" height="900" fill="#08111f"/>
+  <rect x="34" y="34" width="1212" height="832" rx="28" fill="#0b1321" stroke="#1e293b"/>
+  <rect x="34" y="34" width="1212" height="46" rx="28" fill="#111827"/>
+  <circle cx="68" cy="57" r="7" fill="#ef4444"/>
+  <circle cx="90" cy="57" r="7" fill="#f59e0b"/>
+  <circle cx="112" cy="57" r="7" fill="#22c55e"/>
+  <text x="60" y="118" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="19">CUDA_Mnemonic_Recovery -device 0,1,2,3 -recovery -i examples/bench/templates-8x-2missing.txt -d examples/derivations/default.txt -c c -hash d986ed01... -silent</text>
+  <text x="60" y="170" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Active CUDA devices: 0 1 2 3</text>
+  <text x="60" y="202" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=0 slot=1/4</text>
+  <text x="60" y="234" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=1 slot=2/4</text>
+  <text x="60" y="266" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=2 slot=3/4</text>
+  <text x="60" y="298" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=3 slot=4/4</text>
+  <text x="60" y="352" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 24.89 M candidates/s | tested=25165824 | checksum-valid=1572864 | found=8</text>
+  <text x="60" y="416" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery summary: tested=33554432 checksum-valid=2097152 [!]</text>
+  <text x="60" y="448" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 1/4 (GPU 0): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="480" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 2/4 (GPU 1): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="512" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 3/4 (GPU 2): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="544" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 4/4 (GPU 3): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="608" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery tested 33554432 candidates. Checksum-valid: 2097152. Found: 8.</text>
+  <text x="60" y="660" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="17">Measured locally on four RTX 4090 cards with the reproducible benchmark fixture included in this repository.</text>
+</svg>

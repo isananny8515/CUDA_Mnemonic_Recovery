@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files\App">
+      <UniqueIdentifier>{0C936F6D-B8A7-46B0-867A-E7A813B568C0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Recovery">
+      <UniqueIdentifier>{821D9508-CC44-4A43-8459-D9011A95B57A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Crypto">
+      <UniqueIdentifier>{49A66B4B-63F3-4607-B2AE-9AF20570E3EF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CUDA">
+      <UniqueIdentifier>{D2D6A4F1-6A8B-4A15-9BE1-32A4C3E489B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\fastpbkdf2">
+      <UniqueIdentifier>{FCAD41DA-4231-43CB-B2B1-8B0B1A356FEE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\hash">
+      <UniqueIdentifier>{A10F3F56-A866-4690-B63A-6B6FD0E41877}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\secp256k1">
+      <UniqueIdentifier>{7F777948-2AE5-4029-8756-8E80A6949D02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\ed25519">
+      <UniqueIdentifier>{154530AE-1A93-43D7-BD69-C04A2E1210F0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\App">
+      <UniqueIdentifier>{6D92AA2E-1AE1-4424-B6FC-5FA8272D49D4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Recovery">
+      <UniqueIdentifier>{82819648-7010-4F0F-90A5-503F03EA77F9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CUDA">
+      <UniqueIdentifier>{2517BA31-ED10-4E24-BB47-320CC95BE194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Support">
+      <UniqueIdentifier>{07141DDA-3F65-4430-A232-2584F14A82A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ThirdParty\fastpbkdf2">
+      <UniqueIdentifier>{57BE31EE-B719-48FC-A7D8-8297F574D3A4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ThirdParty\hash">
+      <UniqueIdentifier>{34D934E9-EA9C-42C4-8FDE-B3DBF457A932}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ThirdParty\secp256k1">
+      <UniqueIdentifier>{E262B2E5-AB59-4C9F-98EF-B0D1D89F2E05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ThirdParty\ed25519">
+      <UniqueIdentifier>{47AF247F-1028-4CA5-B58E-6EF447E56231}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Meta">
+      <UniqueIdentifier>{4DA80406-1F42-467C-8291-F3555A7EC548}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Examples">
+      <UniqueIdentifier>{251BD6E1-BD73-4B39-883F-0510EF32DC71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Wordlists">
+      <UniqueIdentifier>{A8612DD5-2F4A-4080-A44E-F8B8F52A7B8F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\app\main.cpp"><Filter>Source Files\App</Filter></ClCompile>
+    <ClCompile Include="src\app\recovery_cli.cpp"><Filter>Source Files\App</Filter></ClCompile>
+    <ClCompile Include="src\app\recovery_config.cpp"><Filter>Source Files\App</Filter></ClCompile>
+    <ClCompile Include="src\crypto\filter.cpp"><Filter>Source Files\Crypto</Filter></ClCompile>
+    <ClCompile Include="src\recovery\recovery_filter_verify.cu"><Filter>Source Files\Recovery</Filter></ClCompile>
+    <ClCompile Include="src\recovery\recovery_results.cu"><Filter>Source Files\Recovery</Filter></ClCompile>
+    <ClCompile Include="third_party\hash\sha256.cpp"><Filter>Source Files\ThirdParty\hash</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\crypto\FilterFunc.cu"><Filter>Source Files\Crypto</Filter></CudaCompile>
+    <CudaCompile Include="src\crypto\HashFunc.cu"><Filter>Source Files\Crypto</Filter></CudaCompile>
+    <CudaCompile Include="src\crypto\MnemonicFunc.cu"><Filter>Source Files\Crypto</Filter></CudaCompile>
+    <CudaCompile Include="src\crypto\TonFunc.cu"><Filter>Source Files\Crypto</Filter></CudaCompile>
+    <CudaCompile Include="src\cuda\Kernel.cu"><Filter>Source Files\CUDA</Filter></CudaCompile>
+    <CudaCompile Include="src\cuda\WorkerRecovery.cu"><Filter>Source Files\CUDA</Filter></CudaCompile>
+    <CudaCompile Include="src\cuda\WorkerRecoveryCompat.cu"><Filter>Source Files\CUDA</Filter></CudaCompile>
+    <CudaCompile Include="src\recovery\recovery_compat_device.cu"><Filter>Source Files\Recovery</Filter></CudaCompile>
+    <CudaCompile Include="src\recovery\recovery_pipeline.cu"><Filter>Source Files\Recovery</Filter></CudaCompile>
+    <CudaCompile Include="third_party\fastpbkdf2\pbkdf2_func.cu"><Filter>Source Files\ThirdParty\fastpbkdf2</Filter></CudaCompile>
+    <CudaCompile Include="third_party\hash\GPUHash.cu"><Filter>Source Files\ThirdParty\hash</Filter></CudaCompile>
+    <CudaCompile Include="third_party\ed25519\ed25519.cu"><Filter>Source Files\ThirdParty\ed25519</Filter></CudaCompile>
+    <CudaCompile Include="third_party\ed25519\sha512_device.cu"><Filter>Source Files\ThirdParty\ed25519</Filter></CudaCompile>
+    <CudaCompile Include="third_party\secp256k1\GPUConstants.cu"><Filter>Source Files\ThirdParty\secp256k1</Filter></CudaCompile>
+    <CudaCompile Include="third_party\secp256k1\secp256k1.cu"><Filter>Source Files\ThirdParty\secp256k1</Filter></CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\app\recovery_app.h"><Filter>Header Files\App</Filter></ClInclude>
+    <ClInclude Include="include\app\recovery_cli.h"><Filter>Header Files\App</Filter></ClInclude>
+    <ClInclude Include="include\app\recovery_config.h"><Filter>Header Files\App</Filter></ClInclude>
+    <ClInclude Include="include\cuda\DerivationFunc.cuh"><Filter>Header Files\CUDA</Filter></ClInclude>
+    <ClInclude Include="include\cuda\Kernel.cuh"><Filter>Header Files\CUDA</Filter></ClInclude>
+    <ClInclude Include="include\recovery\filter.h"><Filter>Header Files\Recovery</Filter></ClInclude>
+    <ClInclude Include="include\recovery\RecoveryWordlistsEmbedded.h"><Filter>Header Files\Recovery</Filter></ClInclude>
+    <ClInclude Include="include\support\intrin_local.h"><Filter>Header Files\Support</Filter></ClInclude>
+    <ClInclude Include="include\support\uint128_t.cuh"><Filter>Header Files\Support</Filter></ClInclude>
+    <ClInclude Include="include\support\Words.cuh"><Filter>Header Files\Support</Filter></ClInclude>
+    <ClInclude Include="include\support\xor_filter.cuh"><Filter>Header Files\Support</Filter></ClInclude>
+    <ClInclude Include="support\CudaHashLookup.h"><Filter>Header Files\Support</Filter></ClInclude>
+    <ClInclude Include="third_party\fastpbkdf2\fastpbkdf2.cuh"><Filter>Header Files\ThirdParty\fastpbkdf2</Filter></ClInclude>
+    <ClInclude Include="third_party\hash\GPUHash.cuh"><Filter>Header Files\ThirdParty\hash</Filter></ClInclude>
+    <ClInclude Include="third_party\hash\sha256.h"><Filter>Header Files\ThirdParty\hash</Filter></ClInclude>
+    <ClInclude Include="third_party\hash\sha3_ver3.cuh"><Filter>Header Files\ThirdParty\hash</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\GPUGroup.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\GPUMath.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\GPUWalk.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_batch_impl.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_common.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_field.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_group.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_modinv32.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_prec8.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1_scalar.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\secp256k1\secp256k1.cuh"><Filter>Header Files\ThirdParty\secp256k1</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\curve25519-donna-32bit.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\curve25519-donna-helpers.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519-donna-32bit-tables.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519-donna-basepoint-table.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519-donna-impl-base.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519-donna-portable.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519-donna.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\ed25519.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\modm-donna-32bit.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+    <ClInclude Include="third_party\ed25519\sha2.h"><Filter>Header Files\ThirdParty\ed25519</Filter></ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes"><Filter>Meta</Filter></None>
+    <None Include=".gitignore"><Filter>Meta</Filter></None>
+    <None Include="CMakeLists.txt"><Filter>Meta</Filter></None>
+    <None Include="CMakePresets.json"><Filter>Meta</Filter></None>
+    <None Include="LICENSE.txt"><Filter>Meta</Filter></None>
+    <None Include="Makefile"><Filter>Meta</Filter></None>
+    <None Include="README.md"><Filter>Meta</Filter></None>
+    <None Include="THIRD_PARTY_NOTICES.md"><Filter>Meta</Filter></None>
+    <None Include="assets\wordlists\bip39-cs.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-en.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-es.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-fr.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-it.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-ja.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-ko.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-pt.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-zh-hans.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="assets\wordlists\bip39-zh-hant.txt"><Filter>Assets\Wordlists</Filter></None>
+    <None Include="examples\derivations\default.txt"><Filter>Examples</Filter></None>
+    <None Include="examples\passphrases.txt"><Filter>Examples</Filter></None>
+    <None Include="examples\templates.txt"><Filter>Examples</Filter></None>
+  </ItemGroup>
+</Project>

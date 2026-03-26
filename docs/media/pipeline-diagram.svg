@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="#08111f"/>
+  <text x="80" y="88" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">Recovery Pipeline</text>
+  <text x="80" y="126" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="20">From incomplete mnemonic template to validated hit.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="80" y="188" width="220" height="120" rx="24" fill="#0f172a" stroke="#38bdf8"/>
+    <text x="112" y="234" fill="#f8fafc" font-size="24" font-weight="700">Template Input</text>
+    <text x="112" y="268" fill="#cbd5e1" font-size="18">Inline phrase or</text>
+    <text x="112" y="294" fill="#cbd5e1" font-size="18">template file</text>
+
+    <rect x="370" y="188" width="220" height="120" rx="24" fill="#0f172a" stroke="#22c55e"/>
+    <text x="402" y="234" fill="#f8fafc" font-size="24" font-weight="700">Checksum Stage</text>
+    <text x="402" y="268" fill="#cbd5e1" font-size="18">Wildcard expansion</text>
+    <text x="402" y="294" fill="#cbd5e1" font-size="18">and BIP39 pruning</text>
+
+    <rect x="660" y="188" width="220" height="120" rx="24" fill="#0f172a" stroke="#f59e0b"/>
+    <text x="692" y="234" fill="#f8fafc" font-size="24" font-weight="700">Derivation Stage</text>
+    <text x="692" y="268" fill="#cbd5e1" font-size="18">BIP32 or SLIP-0010</text>
+    <text x="692" y="294" fill="#cbd5e1" font-size="18">depending on routing</text>
+
+    <rect x="950" y="188" width="250" height="120" rx="24" fill="#0f172a" stroke="#a78bfa"/>
+    <text x="982" y="234" fill="#f8fafc" font-size="24" font-weight="700">Target Validation</text>
+    <text x="982" y="268" fill="#cbd5e1" font-size="18">Hash, Bloom, XOR,</text>
+    <text x="982" y="294" fill="#cbd5e1" font-size="18">and optional CPU verify</text>
+  </g>
+  <path d="M300 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M590 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M880 248h70" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+  <rect x="330" y="404" width="620" height="124" rx="28" fill="#0b1321" stroke="#1e293b"/>
+  <text x="370" y="456" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">Async save path</text>
+  <text x="370" y="492" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">GPU batches keep moving while CPU-side result formatting, optional verify, and file output run in background save workers.</text>
+</svg>

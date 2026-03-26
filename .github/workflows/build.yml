@@ -1,0 +1,53 @@
+name: build-smoke
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux CUDA Build
+    runs-on: ubuntu-latest
+    container:
+      image: nvidia/cuda:13.1.1-devel-ubuntu22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y cmake ninja-build g++ make
+
+      - name: Configure
+        run: cmake --preset linux-release -D CMAKE_CUDA_ARCHITECTURES=89
+
+      - name: Build
+        run: cmake --build --preset linux-release
+
+  windows:
+    name: Windows CUDA Build
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.24
+        with:
+          cuda: "13.1.0"
+          method: "network"
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure
+        shell: powershell
+        run: cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
+
+      - name: Build
+        shell: powershell
+        run: cmake --build --preset windows-release --config Release -- /m:1

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E91C9120-8B26-4D3B-9B0E-02B5703B029E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>CUDA_Mnemonic_Recovery</RootNamespace>
+    <ProjectName>CUDA_Mnemonic_Recovery</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <CudaBuildCustomizationsDir Condition="Exists('$(VCTargetsPath)\BuildCustomizations\CUDA 13.1.props')">$(VCTargetsPath)\BuildCustomizations</CudaBuildCustomizationsDir>
+    <CudaBuildCustomizationsDir Condition="'$(CudaBuildCustomizationsDir)'=='' and Exists('C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\BuildCustomizations\CUDA 13.1.props')">C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\BuildCustomizations</CudaBuildCustomizationsDir>
+    <CudaBuildCustomizationsDir Condition="'$(CudaBuildCustomizationsDir)'=='' and Exists('$(VCTargetsPath)\BuildCustomizations\CUDA 13.0.props')">$(VCTargetsPath)\BuildCustomizations</CudaBuildCustomizationsDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(CudaBuildCustomizationsDir)\CUDA 13.1.props" Condition="Exists('$(CudaBuildCustomizationsDir)\CUDA 13.1.props')" />
+    <Import Project="$(CudaBuildCustomizationsDir)\CUDA 13.0.props" Condition="!Exists('$(CudaBuildCustomizationsDir)\CUDA 13.1.props') and Exists('$(CudaBuildCustomizationsDir)\CUDA 13.0.props')" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+    <VcpkgManifestInstall>false</VcpkgManifestInstall>
+    <VcpkgAutoLink>false</VcpkgAutoLink>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ProjectIncludeDirs>$(ProjectDir);$(ProjectDir)include;$(ProjectDir)third_party\fastpbkdf2;$(ProjectDir)third_party\hash;$(ProjectDir)third_party\secp256k1;$(ProjectDir)third_party\ed25519</ProjectIncludeDirs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)out\vs\x64\Release\bin\</OutDir>
+    <IntDir>$(ProjectDir)out\vs\x64\Release\obj\</IntDir>
+    <TargetName>CUDA_Mnemonic_Recovery</TargetName>
+    <LinkIncremental>false</LinkIncremental>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_HAS_STD_BYTE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectIncludeDirs);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart_static.lib;cudadevrt.lib;Dbghelp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>536870912</StackReserveSize>
+      <LargeAddressAware>true</LargeAddressAware>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_89,sm_89</CodeGeneration>
+      <FastMath>false</FastMath>
+      <SplitCompile>ExtendedMaxThreads</SplitCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <Optimization>O2</Optimization>
+      <FastCompile>Off</FastCompile>
+      <Include>$(ProjectIncludeDirs);%(Include)</Include>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/utf-8 /MP /MT" -O3 --extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <EnableVirtualArchInFatbin>false</EnableVirtualArchInFatbin>
+      <MaxRegCount>0</MaxRegCount>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLinkTimeOptimization>false</PerformDeviceLinkTimeOptimization>
+      <Optimization>O3</Optimization>
+      <AdditionalOptions>--verbose %(AdditionalOptions)</AdditionalOptions>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\app\main.cpp" />
+    <ClCompile Include="src\app\recovery_cli.cpp" />
+    <ClCompile Include="src\app\recovery_config.cpp" />
+    <ClCompile Include="src\crypto\filter.cpp" />
+    <ClCompile Include="src\recovery\recovery_filter_verify.cu" />
+    <ClCompile Include="src\recovery\recovery_results.cu" />
+    <ClCompile Include="third_party\hash\sha256.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\crypto\FilterFunc.cu" />
+    <CudaCompile Include="src\crypto\HashFunc.cu" />
+    <CudaCompile Include="src\crypto\MnemonicFunc.cu" />
+    <CudaCompile Include="src\crypto\TonFunc.cu" />
+    <CudaCompile Include="src\cuda\Kernel.cu" />
+    <CudaCompile Include="src\cuda\WorkerRecovery.cu" />
+    <CudaCompile Include="src\cuda\WorkerRecoveryCompat.cu" />
+    <CudaCompile Include="src\recovery\recovery_compat_device.cu" />
+    <CudaCompile Include="src\recovery\recovery_pipeline.cu" />
+    <CudaCompile Include="third_party\fastpbkdf2\pbkdf2_func.cu" />
+    <CudaCompile Include="third_party\hash\GPUHash.cu" />
+    <CudaCompile Include="third_party\ed25519\ed25519.cu" />
+    <CudaCompile Include="third_party\ed25519\sha512_device.cu" />
+    <CudaCompile Include="third_party\secp256k1\GPUConstants.cu" />
+    <CudaCompile Include="third_party\secp256k1\secp256k1.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\app\recovery_app.h" />
+    <ClInclude Include="include\app\recovery_cli.h" />
+    <ClInclude Include="include\app\recovery_config.h" />
+    <ClInclude Include="include\cuda\DerivationFunc.cuh" />
+    <ClInclude Include="include\cuda\Kernel.cuh" />
+    <ClInclude Include="include\recovery\filter.h" />
+    <ClInclude Include="include\recovery\RecoveryWordlistsEmbedded.h" />
+    <ClInclude Include="include\support\intrin_local.h" />
+    <ClInclude Include="include\support\uint128_t.cuh" />
+    <ClInclude Include="include\support\Words.cuh" />
+    <ClInclude Include="include\support\xor_filter.cuh" />
+    <ClInclude Include="support\CudaHashLookup.h" />
+    <ClInclude Include="third_party\fastpbkdf2\fastpbkdf2.cuh" />
+    <ClInclude Include="third_party\hash\GPUHash.cuh" />
+    <ClInclude Include="third_party\hash\sha256.h" />
+    <ClInclude Include="third_party\hash\sha3_ver3.cuh" />
+    <ClInclude Include="third_party\secp256k1\GPUGroup.cuh" />
+    <ClInclude Include="third_party\secp256k1\GPUMath.cuh" />
+    <ClInclude Include="third_party\secp256k1\GPUWalk.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_batch_impl.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_common.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_field.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_group.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_modinv32.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_prec8.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1_scalar.cuh" />
+    <ClInclude Include="third_party\secp256k1\secp256k1.cuh" />
+    <ClInclude Include="third_party\ed25519\curve25519-donna-32bit.h" />
+    <ClInclude Include="third_party\ed25519\curve25519-donna-helpers.h" />
+    <ClInclude Include="third_party\ed25519\ed25519-donna-32bit-tables.h" />
+    <ClInclude Include="third_party\ed25519\ed25519-donna-basepoint-table.h" />
+    <ClInclude Include="third_party\ed25519\ed25519-donna-impl-base.h" />
+    <ClInclude Include="third_party\ed25519\ed25519-donna-portable.h" />
+    <ClInclude Include="third_party\ed25519\ed25519-donna.h" />
+    <ClInclude Include="third_party\ed25519\ed25519.h" />
+    <ClInclude Include="third_party\ed25519\modm-donna-32bit.h" />
+    <ClInclude Include="third_party\ed25519\sha2.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include="CMakeLists.txt" />
+    <None Include="CMakePresets.json" />
+    <None Include="LICENSE.txt" />
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="THIRD_PARTY_NOTICES.md" />
+    <None Include="assets\wordlists\bip39-cs.txt" />
+    <None Include="assets\wordlists\bip39-en.txt" />
+    <None Include="assets\wordlists\bip39-es.txt" />
+    <None Include="assets\wordlists\bip39-fr.txt" />
+    <None Include="assets\wordlists\bip39-it.txt" />
+    <None Include="assets\wordlists\bip39-ja.txt" />
+    <None Include="assets\wordlists\bip39-ko.txt" />
+    <None Include="assets\wordlists\bip39-pt.txt" />
+    <None Include="assets\wordlists\bip39-zh-hans.txt" />
+    <None Include="assets\wordlists\bip39-zh-hant.txt" />
+    <None Include="examples\derivations\default.txt" />
+    <None Include="examples\passphrases.txt" />
+    <None Include="examples\templates.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(CudaBuildCustomizationsDir)\CUDA 13.1.targets" Condition="Exists('$(CudaBuildCustomizationsDir)\CUDA 13.1.targets')" />
+    <Import Project="$(CudaBuildCustomizationsDir)\CUDA 13.0.targets" Condition="!Exists('$(CudaBuildCustomizationsDir)\CUDA 13.1.targets') and Exists('$(CudaBuildCustomizationsDir)\CUDA 13.0.targets')" />
+  </ImportGroup>
+</Project>
