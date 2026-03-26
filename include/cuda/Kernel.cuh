@@ -197,6 +197,9 @@ __global__ void ecmult_big_create(secp256k1_gej* gej_temp, secp256k1_fe* z_ratio
 
 __host__ void setSilentMode();
 __host__ void setPassMode();
+void recovery_console_write_status_line(const std::string& line);
+void recovery_console_clear_status_line();
+void recovery_console_write_stdout_line(const std::string& line);
 
 // Recovery compatibility evaluator used after checksum filtering.
 __global__ void workerRecoveryCompat(bool* isResult, bool* buffResult, const secp256k1_ge_storage* __restrict__ precPtr, const size_t precPitch, char* __restrict__ lines, const uint32_t* __restrict__ indexes, const uint32_t indexes_size, const uint32_t* __restrict__ d_derivations, const uint32_t* __restrict__ derindex, const uint32_t der_indexes_size, const uint32_t der_start_index, const char* __restrict__ passwd, const uint32_t pass_size, uint64_t round);

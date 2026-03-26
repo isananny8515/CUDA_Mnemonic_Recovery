@@ -3571,12 +3571,12 @@ int RunRecoveryApp(int argc, char** argv)
     const cudaError_t cudaStatus = processCudaRecovery();
 
     stopSpeedThread();
+    recovery_console_clear_status_line();
 
     {
         std::lock_guard<std::mutex> lock(g_save_threads_mutex);
-        std::cout << "\n";
         if (!g_save_threads.empty()) {
-            std::cout << "[!] Waiting for save workers to finish...\r";
+            recovery_console_write_status_line("[!] Waiting for save workers to finish...");
         }
         for (auto& t : g_save_threads) {
             if (t.joinable()) {
@@ -3585,6 +3585,7 @@ int RunRecoveryApp(int argc, char** argv)
         }
         g_save_threads.clear();
     }
+    recovery_console_clear_status_line();
 
     s_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::cout << "\n[!] Recovery tested " << g_recovery_tested_total.load(std::memory_order_relaxed)
@@ -4722,8 +4723,8 @@ void printSpeed(double speed, int, uint32_t, int, double)
          << (speed / 1000000.0) << " M candidates/s"
          << " | tested=" << tested
          << " | checksum-valid=" << valid
-         << " | found=" << Founds.load(std::memory_order_relaxed) << "\r";
-    std::cout << line.str() << std::flush;
+         << " | found=" << Founds.load(std::memory_order_relaxed);
+    recovery_console_write_status_line(line.str());
 }
 cudaError_t CudaHashLookup::loadBloomFromFiles(const std::vector<string>& targets)
 {

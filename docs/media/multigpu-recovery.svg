@@ -12,11 +12,12 @@
   <text x="60" y="266" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=2 slot=3/4</text>
   <text x="60" y="298" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery multiGPU: device=3 slot=4/4</text>
   <text x="60" y="352" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 24.89 M candidates/s | tested=25165824 | checksum-valid=1572864 | found=8</text>
-  <text x="60" y="416" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery summary: tested=33554432 checksum-valid=2097152 [!]</text>
-  <text x="60" y="448" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 1/4 (GPU 0): tested=8388608 checksum-valid=524288</text>
-  <text x="60" y="480" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 2/4 (GPU 1): tested=8388608 checksum-valid=524288</text>
-  <text x="60" y="512" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 3/4 (GPU 2): tested=8388608 checksum-valid=524288</text>
-  <text x="60" y="544" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 4/4 (GPU 3): tested=8388608 checksum-valid=524288</text>
-  <text x="60" y="608" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery tested 33554432 candidates. Checksum-valid: 2097152. Found: 8.</text>
-  <text x="60" y="660" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="17">Measured locally on four RTX 4090 cards with the reproducible benchmark fixture included in this repository.</text>
+  <text x="60" y="404" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery summary: tested=33554432 checksum-valid=2097152 [!]</text>
+  <text x="60" y="436" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 1/4 (GPU 0): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="468" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 2/4 (GPU 1): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="500" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 3/4 (GPU 2): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="532" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery slot 4/4 (GPU 3): tested=8388608 checksum-valid=524288</text>
+  <text x="60" y="584" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Waiting for save workers to finish...</text>
+  <text x="60" y="636" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery tested 33554432 candidates. Checksum-valid: 2097152. Found: 8.</text>
+  <text x="60" y="688" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="17">Measured locally on four RTX 4090 cards with the benchmark fixture included in this repository and a live in-place speed line.</text>
 </svg>

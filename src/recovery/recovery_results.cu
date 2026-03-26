@@ -38,6 +38,9 @@ bool g_silent_mode = false;
 bool g_has_passphrases = false;
 std::mutex g_result_write_mutex;
 std::mutex g_founds_mutex;
+std::mutex g_console_status_mutex;
+size_t g_console_status_width = 0u;
+bool g_console_status_active = false;
 
 thread_local int g_save_output_gpu_id = -1;
 thread_local bool g_save_output_stdout_line_start = true;
@@ -62,6 +65,22 @@ void save_output_set_gpu_prefix(const int gpu_id) {
     g_save_output_gpu_id = gpu_id;
     g_save_output_stdout_line_start = true;
     g_save_output_file_line_start = true;
+}
+
+void clear_console_status_line_locked() {
+    if (!g_console_status_active) {
+        return;
+    }
+
+    std::string blank;
+    blank.reserve(g_console_status_width + 3u);
+    blank.push_back('\r');
+    blank.append(g_console_status_width, ' ');
+    blank.push_back('\r');
+    std::fputs(blank.c_str(), stdout);
+    std::fflush(stdout);
+    g_console_status_active = false;
+    g_console_status_width = 0u;
 }
 
 // save_output_apply_gpu_prefix: injects a per-GPU prefix without breaking line boundaries.
@@ -715,8 +734,7 @@ void write_line(FILE* file, const std::string& line) {
         std::fflush(file);
     }
     if (!g_silent_mode && !stdout_text.empty()) {
-        std::fputs(stdout_text.c_str(), stdout);
-        std::fflush(stdout);
+        recovery_console_write_stdout_line(stdout_text);
     }
 }
 
@@ -795,6 +813,46 @@ void drain_save_threads_locked() {
 }
 
 } // namespace
+
+void recovery_console_write_status_line(const std::string& line) {
+    std::string normalized = line;
+    while (!normalized.empty() && (normalized.back() == '\r' || normalized.back() == '\n')) {
+        normalized.pop_back();
+    }
+    if (normalized.empty()) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(g_console_status_mutex);
+    std::string output;
+    output.reserve(normalized.size() + 3u + (g_console_status_active && g_console_status_width > normalized.size() ? (g_console_status_width - normalized.size()) : 0u));
+    output.push_back('\r');
+    output += normalized;
+    if (g_console_status_active && g_console_status_width > normalized.size()) {
+        output.append(g_console_status_width - normalized.size(), ' ');
+    }
+    output.push_back('\r');
+    std::fputs(output.c_str(), stdout);
+    std::fflush(stdout);
+    g_console_status_active = true;
+    g_console_status_width = normalized.size();
+}
+
+void recovery_console_clear_status_line() {
+    std::lock_guard<std::mutex> lock(g_console_status_mutex);
+    clear_console_status_line_locked();
+}
+
+void recovery_console_write_stdout_line(const std::string& line) {
+    if (line.empty()) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(g_console_status_mutex);
+    clear_console_status_line_locked();
+    std::fputs(line.c_str(), stdout);
+    std::fflush(stdout);
+}
 
 __host__ void setSilentMode() {
     g_silent_mode = true;
