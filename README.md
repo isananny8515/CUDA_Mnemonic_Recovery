@@ -35,31 +35,31 @@ It is built for practical recovery work: real wildcard templates, real derivatio
 ### Command Help
 
 <p>
-  <img src="./docs/media/help-terminal.svg" alt="Command help screenshot" width="920">
+  <img src="./docs/media/help-terminal.svg" alt="Command help screenshot" width="880">
 </p>
 
 ### Single-GPU Recovery
 
 <p>
-  <img src="./docs/media/single-recovery.svg" alt="Single GPU recovery example" width="920">
+  <img src="./docs/media/single-recovery.svg" alt="Single GPU recovery example" width="880">
 </p>
 
 ### Multi-GPU Recovery
 
 <p>
-  <img src="./docs/media/multigpu-recovery.svg" alt="Multi GPU recovery example" width="920">
+  <img src="./docs/media/multigpu-recovery.svg" alt="Multi GPU recovery example" width="880">
 </p>
 
 ### Recovery Pipeline
 
 <p>
-  <img src="./docs/media/pipeline-diagram.svg" alt="Recovery pipeline diagram" width="920">
+  <img src="./docs/media/pipeline-diagram.svg" alt="Recovery pipeline diagram" width="880">
 </p>
 
 ### Multi-GPU Work Split
 
 <p>
-  <img src="./docs/media/multigpu-diagram.svg" alt="Multi GPU work split diagram" width="920">
+  <img src="./docs/media/multigpu-diagram.svg" alt="Multi GPU work split diagram" width="880">
 </p>
 
 ## Highlights
@@ -149,22 +149,24 @@ The packaged binaries are prepared to be easy to move between machines:
 
 ## Quick Start
 
+The first commands below all use the same bundled exact-hash fixture, so you can reproduce the run as-is on this repository.
+
 ### Recover one missing word from the command line
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon *" -d examples/derivations/default.txt
+CUDA_Mnemonic_Recovery -device 2 -recovery "adapt access alert human kiwi rough pottery level soon funny burst *" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Recover from a file with template lines
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt
+CUDA_Mnemonic_Recovery -device 2 -recovery -i examples/templates.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Validate against a real exact hash
 
 ```bash
-CUDA_Mnemonic_Recovery -device 2 -recovery "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon * *" -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa
+CUDA_Mnemonic_Recovery -device 2 -recovery "* * alert human kiwi rough pottery level * funny burst divorce" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Recover with an XOR filter
@@ -194,8 +196,8 @@ Each line is one mnemonic template. Missing words are written as `*`.
 Example: [`examples/templates.txt`](./examples/templates.txt)
 
 ```text
-abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon *
-legal winner thank year wave sausage worth useful legal winner thank *
+adapt access alert human kiwi rough pottery level soon funny burst *
+adapt access alert human kiwi rough pottery level soon funny * *
 ```
 
 Rules:
@@ -362,33 +364,63 @@ What the tool does in multi-GPU mode:
 - aggregates final tested / checksum-valid totals
 - keeps async save workers alive until the end of the run
 
-### Benchmark methodology
+### Real local benchmark
 
-The repository currently ships two different Multi-GPU fixtures:
+The numbers below were measured on this machine after fixing the staged multi-GPU path. This benchmark uses:
 
-- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) is a short smoke fixture for validating counters, slot split, and output formatting
-- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) is the heavier fixture to start from when you want a more meaningful Multi-GPU scaling check
+- mnemonic: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
+- derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
+- target family: `-c c`
+- exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
+- build: Windows Release, `sm_89`
+- measurement rule: end-to-end wall-clock until the first real `[!] Found:` line
 
-Why the distinction matters:
+Benchmark fixture:
 
-- a `2 missing words` run is too short to represent real Multi-GPU scaling well
-- initialization, scheduling, and save-thread overhead dominate that kind of micro-benchmark
-- if you want honest scaling numbers, use at least `3 missing words`, and preferably even heavier real workloads
+- [`examples/bench/templates-1x-3missing.txt`](./examples/bench/templates-1x-3missing.txt)
 
-Reference command for a serious Multi-GPU benchmark:
+Command pattern:
 
 ```bash
-CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-3missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
+CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-3missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
-Recommended measurement rules:
+Measured results:
 
-- compare `1 GPU`, `2 GPU`, and `4 GPU` with the exact same fixture and arguments
-- measure full wall-clock runtime, not only the live speed line
-- keep the selected GPUs otherwise idle
-- treat the `8x-2missing` fixture as a smoke test, not as a publication-grade benchmark
+| GPUs | Devices | Workload | Wall-clock to first hit | Last live speed before hit |
+| --- | --- | --- | --- | --- |
+| `1` | `2` | `1 template`, `3 missing words`, exact hash | `550.07 s` | `12.53 M candidates/s` |
+| `2` | `0,2` | same | `211.58 s` | `26.87 M candidates/s` |
+| `4` | `0,1,2,3` | same | `41.59 s` | `54.15 M candidates/s` |
 
-The README intentionally does not publish official scaling numbers from the short `2 missing words` run anymore.
+Measured wall-clock speedup from the same fixture:
+
+- `2 GPU`: about `2.60x`
+- `4 GPU`: about `13.23x`
+
+### Stress case: 4 missing words
+
+The stress fixture is separate on purpose:
+
+- [`examples/bench/templates-1x-4missing.txt`](./examples/bench/templates-1x-4missing.txt)
+
+Command pattern:
+
+```bash
+CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-4missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
+```
+
+Measured result:
+
+| Scenario | Result |
+| --- | --- |
+| `1 GPU`, device `2`, same exact hash, `10 minute` limit | no hit within `600.37 s` |
+| `4 GPU`, devices `0,1,2,3`, same exact hash | first hit in `15.75 s`, last live speed `56.42 M candidates/s` |
+
+Extra fixtures in this repository:
+
+- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) is still useful as a short smoke test for counters and output formatting
+- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) remains a heavier batch-style fixture if you want a longer non-showcase run
 
 ## Troubleshooting
 
@@ -582,22 +614,24 @@ Release-сборки делаются на CUDA `12.8`. Для отдельны�
 
 ## Быстрый Старт
 
+Первые команды ниже используют один и тот же exact-hash fixture из репозитория, так что их можно воспроизвести как есть.
+
 ### Восстановление одного пропущенного слова из командной строки
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon *" -d examples/derivations/default.txt
+CUDA_Mnemonic_Recovery -device 2 -recovery "adapt access alert human kiwi rough pottery level soon funny burst *" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Восстановление из файла с шаблонами
 
 ```bash
-CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivations/default.txt
+CUDA_Mnemonic_Recovery -device 2 -recovery -i examples/templates.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Проверка по реальному точному hash target
 
 ```bash
-CUDA_Mnemonic_Recovery -device 2 -recovery "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon * *" -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa
+CUDA_Mnemonic_Recovery -device 2 -recovery "* * alert human kiwi rough pottery level * funny burst divorce" -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
 ### Проверка через XOR filter
@@ -627,8 +661,8 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 Пример: [`examples/templates.txt`](./examples/templates.txt)
 
 ```text
-abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon *
-legal winner thank year wave sausage worth useful legal winner thank *
+adapt access alert human kiwi rough pottery level soon funny burst *
+adapt access alert human kiwi rough pottery level soon funny * *
 ```
 
 Правила:
@@ -795,33 +829,63 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 - агрегирует итоговые tested / checksum-valid totals
 - сохраняет async save workers до конца выполнения
 
-### Методика benchmark для Multi-GPU
+### Реальный локальный benchmark
 
-В репозитории сейчас есть два разных Multi-GPU fixture:
+Цифры ниже сняты на этой машине уже после фикса staged multi-GPU path. Для benchmark использовались:
 
-- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) — короткий smoke-fixture для проверки counters, split по слотам и форматирования вывода
-- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) — более тяжёлый fixture, с которого уже разумно начинать реальную проверку масштабирования Multi-GPU
+- мнемоника: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
+- derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
+- family: `-c c`
+- exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
+- сборка: Windows Release, `sm_89`
+- правило измерения: полный wall-clock до первой реальной строки `[!] Found:`
 
-Почему это важно:
+Основной benchmark-fixture:
 
-- сценарий с `2 пропущенными словами` слишком короткий для честной оценки масштабирования
-- в таком micro-benchmark заметно доминируют инициализация, scheduling и save-thread overhead
-- если нужны честные Multi-GPU цифры, тестировать лучше минимум на `3 пропущенных словах`, а ещё лучше на более тяжёлых реальных задачах
+- [`examples/bench/templates-1x-3missing.txt`](./examples/bench/templates-1x-3missing.txt)
 
-Референсная команда для серьёзного Multi-GPU benchmark:
+Шаблон команды:
 
 ```bash
-CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/bench/templates-8x-3missing.txt -d examples/derivations/default.txt -c c -hash d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa -silent
+CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-3missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
 ```
 
-Как мерить корректно:
+Измеренные результаты:
 
-- сравнивать `1 GPU`, `2 GPU` и `4 GPU` на абсолютно одинаковом fixture и одинаковых аргументах
-- смотреть на полный wall-clock, а не только на live speed line
-- держать выбранные GPU свободными от другой нагрузки
-- `8x-2missing` считать smoke-тестом, а не benchmark для публикации
+| GPU | Устройства | Нагрузка | Wall-clock до первого hit | Последняя live speed line перед hit |
+| --- | --- | --- | --- | --- |
+| `1` | `2` | `1 шаблон`, `3 пропущенных слова`, exact hash | `550.07 s` | `12.53 M candidates/s` |
+| `2` | `0,2` | то же самое | `211.58 s` | `26.87 M candidates/s` |
+| `4` | `0,1,2,3` | то же самое | `41.59 s` | `54.15 M candidates/s` |
 
-В README больше не публикуются “официальные” scaling-цифры, снятые с короткого `2 missing words` сценария.
+Измеренное ускорение по wall-clock на этом же fixture:
+
+- `2 GPU`: около `2.60x`
+- `4 GPU`: около `13.23x`
+
+### Stress-кейс: 4 пропущенных слова
+
+Для stress-сценария используется отдельный fixture:
+
+- [`examples/bench/templates-1x-4missing.txt`](./examples/bench/templates-1x-4missing.txt)
+
+Шаблон команды:
+
+```bash
+CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-4missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
+```
+
+Измеренный результат:
+
+| Сценарий | Результат |
+| --- | --- |
+| `1 GPU`, устройство `2`, тот же exact hash, лимит `10 минут` | hit не найден за `600.37 s` |
+| `4 GPU`, устройства `0,1,2,3`, тот же exact hash | первый hit через `15.75 s`, последняя live speed line `56.42 M candidates/s` |
+
+Дополнительные fixtures в репозитории:
+
+- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) по-прежнему удобен как короткий smoke-тест для counters и форматирования вывода
+- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) остаётся более тяжёлым batch-style fixture для длинных запусков вне README-showcase
 
 ## Troubleshooting
 

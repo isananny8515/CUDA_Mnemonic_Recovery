@@ -2662,7 +2662,10 @@ static bool recovery_emit_task_candidates_gpu(RecoveryGpuDirectContext& ctx, con
 
     const unsigned int launch_threads = (BLOCK_THREADS == 0u) ? 256u : BLOCK_THREADS;
     const unsigned int launch_blocks = (BLOCK_NUMBER == 0u) ? 1024u : BLOCK_NUMBER;
-    const uint64_t hard_batch = 1ull << 22; // 4M candidates per launch before adaptive splitting.
+    // Keep checksum-valid batches comfortably below the compaction buffer limit.
+    // The old 4M boundary sits exactly on the 1/16 checksum expectation and proved unstable
+    // during long staged multi-GPU recovery runs.
+    const uint64_t hard_batch = static_cast<uint64_t>(out_capacity) << 3; // 2M candidates per launch.
     pending.reserve(128u);
 
     auto run_low_space = [&](const uint64_t range_start, const uint64_t range_count) -> bool {
@@ -2916,7 +2919,10 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
 
     const unsigned int launch_threads = (BLOCK_THREADS == 0u) ? 256u : BLOCK_THREADS;
     const unsigned int launch_blocks = (BLOCK_NUMBER == 0u) ? 1024u : BLOCK_NUMBER;
-    const uint64_t hard_batch = 1ull << 22;
+    // Keep checksum-valid batches comfortably below the compaction buffer limit.
+    // The old 4M boundary sits exactly on the 1/16 checksum expectation and proved unstable
+    // during long staged multi-GPU recovery runs.
+    const uint64_t hard_batch = static_cast<uint64_t>(out_capacity) << 3; // 2M candidates per launch.
     pending.reserve(128u);
 
     auto run_low_space = [&](const uint64_t range_start, const uint64_t range_count) -> bool {

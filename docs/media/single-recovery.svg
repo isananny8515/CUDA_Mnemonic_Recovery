@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900">
-  <rect width="1280" height="900" fill="#07111d"/>
-  <rect x="34" y="34" width="1212" height="832" rx="28" fill="#0b1321" stroke="#1e293b"/>
-  <rect x="34" y="34" width="1212" height="46" rx="28" fill="#111827"/>
-  <circle cx="68" cy="57" r="7" fill="#ef4444"/>
-  <circle cx="90" cy="57" r="7" fill="#f59e0b"/>
-  <circle cx="112" cy="57" r="7" fill="#22c55e"/>
-  <text x="62" y="118" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="20">CUDA_Mnemonic_Recovery -device 2 -recovery "abandon ... * *" -d examples/derivations/default.txt -c c -hash d986ed01...</text>
-  <text x="62" y="172" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery task: words=12 missing=2 dict=bip39-en.txt</text>
-  <text x="62" y="204" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Candidates to test: ~4.194304e+06 | expected checksum-valid: ~2.621440e+05</text>
-  <text x="62" y="236" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery engine: staged GPU pipeline (checksum + seed + derivation/hash)</text>
-  <text x="62" y="284" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 4.08 M candidates/s | tested=2097152 | checksum-valid=131072 | found=0</text>
-  <text x="62" y="336" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery task done (1/1): tested=4194304 checksum-valid=262144 [!]</text>
-  <text x="62" y="368" fill="#93c5fd" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery summary: tested=4194304 checksum-valid=262144 [!]</text>
-  <text x="62" y="400" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Found: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about:</text>
-  <text x="62" y="432" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">m/44'/0'/0'/0/0:e284129cc0922579a535bbf4d1a3b25773090d28c909bc0fed73b5e0222cc372:</text>
-  <text x="62" y="464" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">COMPRESSED:d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa</text>
-  <text x="62" y="516" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Waiting for save workers to finish...</text>
-  <text x="62" y="568" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery tested 4194304 candidates. Checksum-valid: 262144. Found: 1.</text>
-  <text x="62" y="620" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="17">Single-GPU reference run on RTX 4090, sm_89 build, exact hash target, live speed line shown in place.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="940" viewBox="0 0 1440 940">
+  <rect width="1440" height="940" fill="#07111d"/>
+  <rect x="36" y="36" width="1368" height="868" rx="28" fill="#0b1321" stroke="#1e293b"/>
+  <rect x="36" y="36" width="1368" height="48" rx="28" fill="#111827"/>
+  <circle cx="72" cy="60" r="7" fill="#ef4444"/>
+  <circle cx="94" cy="60" r="7" fill="#f59e0b"/>
+  <circle cx="116" cy="60" r="7" fill="#22c55e"/>
+  <text x="66" y="126" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="20">CUDA_Mnemonic_Recovery -device 2 -recovery</text>
+  <text x="66" y="158" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="20">"* * alert human kiwi rough pottery level * funny burst divorce"</text>
+  <text x="66" y="190" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="20">-d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0</text>
+  <text x="66" y="244" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery task: words=12 missing=3 dict=bip39-en.txt</text>
+  <text x="66" y="276" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Candidates to test: ~8.589935e+09 | expected checksum-valid: ~5.368709e+08</text>
+  <text x="66" y="308" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery engine: staged GPU pipeline (checksum + seed + derivation/hash)</text>
+  <text x="66" y="360" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 12.53 M candidates/s | tested=6947864576 | checksum-valid=0 | found=0</text>
+  <text x="66" y="416" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Found: adapt access alert human kiwi rough pottery level soon funny burst divorce:</text>
+  <text x="66" y="448" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">m/44'/0'/0'/0/0:1e1985ee8e215c7250016c04c410a48299710cccf95fed7a749177c436f25df9:</text>
+  <text x="66" y="480" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">COMPRESSED:1a4603d1ff9121515d02a6fee37c20829ca522b0</text>
+  <text x="66" y="536" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Waiting for save workers to finish...</text>
+  <text x="66" y="592" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">Real single-GPU recovery run on device 2, Windows Release sm_89 build, exact hash target.</text>
+  <text x="66" y="624" fill="#94a3b8" font-family="JetBrains Mono, Consolas, monospace" font-size="17">First real hit arrived after 550.07 seconds on the local RTX 4090 test machine.</text>
 </svg>
