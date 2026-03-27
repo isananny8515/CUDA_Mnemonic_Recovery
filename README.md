@@ -504,6 +504,10 @@ This project is intended only for legitimate recovery of wallets, backups, and s
 
 The author strongly discourages any malicious use of this software. Any unlawful or abusive use is entirely the responsibility of the user. See [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) for the short lawful-use policy and [`SECURITY.md`](./SECURITY.md) for private vulnerability reporting guidance.
 
+## Support The Project
+
+If you want to support further development, donation addresses and contact details are collected in [`SUPPORT.md`](./SUPPORT.md).
+
 ## Custom Development
 
 I build custom software on request. If you want changes, extensions, or project-specific adaptations for `CUDA_Mnemonic_Recovery`, you can discuss them with me on Telegram:
@@ -1004,6 +1008,10 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 Проект предназначен только для легитимного восстановления кошельков, backup-фраз и seed-фраз, которые принадлежат вам или на восстановление которых у вас есть явное разрешение владельца.
 
 Я настоятельно не рекомендую использовать это ПО в злонамеренных целях. Полная ответственность за любое незаконное или злоупотребляющее использование лежит исключительно на пользователе. См. [`RESPONSIBLE_USE.md`](./RESPONSIBLE_USE.md) и [`SECURITY.md`](./SECURITY.md).
+
+## Поддержка Проекта
+
+Если вы хотите поддержать дальнейшую разработку, адреса для донатов и контактные данные собраны в [`SUPPORT.md`](./SUPPORT.md).
 
 ## Разработка На Заказ
 
