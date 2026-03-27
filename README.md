@@ -270,7 +270,7 @@ wallet-passphrase-example
 | Option | Meaning |
 | --- | --- |
 | `-c TYPES` | Target family selection. Default: `cus` |
-| `-d_type 1|2|3|4` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 [TEST]` |
+| `-d_type <1/2/3/4>` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 [TEST]` |
 
 If `-d_type` is omitted, routing stays target-native:
 
@@ -803,7 +803,7 @@ wallet-passphrase-example
 | Аргумент | Что делает |
 | --- | --- |
 | `-c TYPES` | Выбор target families. По умолчанию `cus` |
-| `-d_type 1|2|3|4` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 [TEST]` |
+| `-d_type <1/2/3/4>` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 [TEST]` |
 
 Если `-d_type` не указан, остаётся target-native логика:
 
