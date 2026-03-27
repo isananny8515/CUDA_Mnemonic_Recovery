@@ -86,7 +86,8 @@ enum class DerivationPolicy : uint8_t {
     Auto = 0,
     ForceBip32Secp256k1 = 1,
     ForceSlip0010Ed25519 = 2,
-    Mixed = 3
+    Mixed = 3,
+    ForceEd25519Bip32Test = 4
 };
 
 static bool Ethereum = false;
@@ -102,6 +103,7 @@ static bool Ton_all = false;
 static DerivationPolicy g_derivation_policy = DerivationPolicy::Auto;
 static bool secp256_host = false;
 static bool ed25519_host = false;
+static bool ed25519_bip32_host = false;
 static bool secp_target_host = true;
 static bool ed25519_target_host = false;
 
@@ -122,22 +124,32 @@ static bool configure_derivation_policy_runtime() {
     case DerivationPolicy::Auto:
         secp256_host = secp_target_host;
         ed25519_host = ed25519_target_host;
+        ed25519_bip32_host = false;
         return any_target_selected;
     case DerivationPolicy::ForceBip32Secp256k1:
         secp256_host = any_target_selected;
         ed25519_host = false;
+        ed25519_bip32_host = false;
         return any_target_selected;
     case DerivationPolicy::ForceSlip0010Ed25519:
         secp256_host = false;
         ed25519_host = any_target_selected;
+        ed25519_bip32_host = false;
         return any_target_selected;
     case DerivationPolicy::Mixed:
         secp256_host = any_target_selected;
         ed25519_host = any_target_selected;
+        ed25519_bip32_host = false;
+        return any_target_selected;
+    case DerivationPolicy::ForceEd25519Bip32Test:
+        secp256_host = false;
+        ed25519_host = false;
+        ed25519_bip32_host = any_target_selected;
         return any_target_selected;
     default:
         secp256_host = false;
         ed25519_host = false;
+        ed25519_bip32_host = false;
         return false;
     }
 }
@@ -992,13 +1004,69 @@ uint64_t Rounds = 0;
 vector<uint32_t> Derivations;
 vector<string> Derivations_list;
 
-int c_counter = 3;
+static uint64_t recovery_target_checks_per_derivation() {
+    uint64_t checks = 0ull;
+    if (Compressed) {
+        ++checks;
+    }
+    if (Uncompressed) {
+        ++checks;
+    }
+    if (Segwit) {
+        ++checks;
+    }
+    if (Taproot) {
+        ++checks;
+    }
+    if (Ethereum) {
+        ++checks;
+    }
+    if (Xpoint) {
+        ++checks;
+    }
+    if (Solana) {
+        ++checks;
+    }
+    if (Ton) {
+        checks += 4ull;
+    }
+    if (Ton_all) {
+        checks += 10ull;
+    }
+    return checks;
+}
 
+static uint64_t recovery_derivation_engine_multiplier() {
+    switch (g_derivation_policy) {
+    case DerivationPolicy::Mixed:
+        return 2ull;
+    case DerivationPolicy::Auto:
+    case DerivationPolicy::ForceBip32Secp256k1:
+    case DerivationPolicy::ForceSlip0010Ed25519:
+    case DerivationPolicy::ForceEd25519Bip32Test:
+    default:
+        return 1ull;
+    }
+}
+
+static uint64_t recovery_round_multiplier() {
+    return (Rounds * 2ull) + 1ull;
+}
+
+static uint64_t recovery_hash_checks_per_candidate() {
+    const uint64_t derivation_count = static_cast<uint64_t>(Derivations_list.size());
+    const uint64_t target_checks = recovery_target_checks_per_derivation();
+    if (derivation_count == 0ull || target_checks == 0ull) {
+        return 0ull;
+    }
+
+    return derivation_count * target_checks * recovery_derivation_engine_multiplier() * recovery_round_multiplier();
+}
 
 #ifdef _DEBUG
 unsigned int PARAM_ECMULT_WINDOW_SIZE = 4;
 #else
-unsigned int PARAM_ECMULT_WINDOW_SIZE = 18;
+unsigned int PARAM_ECMULT_WINDOW_SIZE = 16;
 #endif
 
 union hash160_20 {
@@ -1006,7 +1074,6 @@ union hash160_20 {
     uint8_t bits20[20];
 };
 
-size_t hashCount = 0;
 set<string>addresses;
 //set<string>pubkeys;
 CudaHashLookup _targetLookup;
@@ -2437,7 +2504,7 @@ static inline bool recovery_partition_skip_high_combo(const uint64_t high_combo_
 static bool recovery_can_use_fused_path() {
     if (g_derivation_policy != DerivationPolicy::Auto) return false;
     if (pass_set) return false;
-    if (!secp256_host || ed25519_host) return false;
+    if (!secp256_host || ed25519_host || ed25519_bip32_host) return false;
     if (Iterations.size() != 1u || Iterations[0] != 1u) return false;
 
     if (!Compressed && !Uncompressed && !Segwit && !Taproot && !Ethereum && !Xpoint) return false;
@@ -2503,6 +2570,9 @@ static bool parse_derivation_policy_argument(const char* value, DerivationPolicy
         return true;
     case '3':
         out_policy = DerivationPolicy::Mixed;
+        return true;
+    case '4':
+        out_policy = DerivationPolicy::ForceEd25519Bip32Test;
         return true;
     default:
         return false;
@@ -3703,13 +3773,13 @@ bool readArgs(int argc, char** argv) {
 
         if (strcmp(arg, "-d_type") == 0) {
             if (++a >= argc) {
-                fprintf(stderr, "[!] Error: -d_type requires a value: 1, 2 or 3 [!]\n");
+                fprintf(stderr, "[!] Error: -d_type requires a value: 1, 2, 3 or 4 [!]\n");
                 return false;
             }
 
             DerivationPolicy parsed_policy = DerivationPolicy::Auto;
             if (!parse_derivation_policy_argument(argv[a], parsed_policy)) {
-                fprintf(stderr, "[!] Error: -d_type accepts only 1, 2 or 3 [!]\n");
+                fprintf(stderr, "[!] Error: -d_type accepts only 1, 2, 3 or 4 [!]\n");
                 return false;
             }
 
@@ -3722,7 +3792,6 @@ bool readArgs(int argc, char** argv) {
                 fprintf(stderr, "[!] Error: -c requires a value [!]\n");
                 return false;
             }
-            c_counter = 0;
             Ethereum = false;
             Compressed = false;
             Uncompressed = false;
@@ -3741,15 +3810,15 @@ bool readArgs(int argc, char** argv) {
                     return false;
                 }
                 switch (value[i]) {
-                case 'c': Compressed = true; ++c_counter; break;
-                case 'u': Uncompressed = true; ++c_counter; break;
-                case 's': Segwit = true; ++c_counter; break;
-                case 'r': Taproot = true; ++c_counter; break;
-                case 'x': Xpoint = true; ++c_counter; break;
-                case 'e': Ethereum = true; ++c_counter; break;
-                case 'S': Solana = true; ++c_counter; break;
-                case 't': Ton = true; c_counter += 5; break;
-                case 'T': Ton_all = true; c_counter += 13; break;
+                case 'c': Compressed = true; break;
+                case 'u': Uncompressed = true; break;
+                case 's': Segwit = true; break;
+                case 'r': Taproot = true; break;
+                case 'x': Xpoint = true; break;
+                case 'e': Ethereum = true; break;
+                case 'S': Solana = true; break;
+                case 't': Ton = true; break;
+                case 'T': Ton_all = true; break;
                 default: break;
                 }
             }
@@ -4680,7 +4749,7 @@ static bool initialize_gpu_contexts(const unsigned int requested_threads, const 
         }
 
         rand_state << <1, 1 >> > ();
-        SetCurve << <1, 1 >> > (secp256_host, ed25519_host, Compressed, Uncompressed, Segwit, Taproot, Ethereum, Xpoint, Solana, Ton, Ton_all);
+        SetCurve << <1, 1 >> > (secp256_host, ed25519_host, ed25519_bip32_host, Compressed, Uncompressed, Segwit, Taproot, Ethereum, Xpoint, Solana, Ton, Ton_all);
         setFilterType << <1, 1 >> > (gpu_bloom_loaded, gpu_xor_loaded, gpu_xor_un_loaded, gpu_xor_uc_loaded, gpu_xor_hc_loaded);
         setDict << <1, 1 >> > (language);
         set_iter << <1, 1 >> > (pbkdf_iter);
@@ -4745,9 +4814,11 @@ void printSpeed(double speed, int, uint32_t, int, double)
 {
     const unsigned long long tested = static_cast<unsigned long long>(counterTotal.load());
     const unsigned long long valid = static_cast<unsigned long long>(g_recovery_emitted_total.load(std::memory_order_relaxed));
+    const double hash_speed = speed * static_cast<double>(recovery_hash_checks_per_candidate());
     std::ostringstream line;
     line << "[!] Recovery speed: " << std::fixed << std::setprecision(2)
          << (speed / 1000000.0) << " M candidates/s"
+         << " | " << (hash_speed / 1000000.0) << " M hashes/s"
          << " | tested=" << tested
          << " | checksum-valid=" << valid
          << " | found=" << Founds.load(std::memory_order_relaxed);

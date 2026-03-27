@@ -274,8 +274,8 @@ __device__ __forceinline__ void get_child_key_ed25519(const extended_private_key
 
 }
 
-// Derives Cardano CIP-1852 child key (mixed hardened/normal indexes).
-__device__ __forceinline__ void get_child_key_cip1852(const extended_private_key_t* __restrict__ master_private, const uint32_t* __restrict__ d_derivations, const uint32_t currentStringLength, uint32_t& processedElements, uint8_t* out32)
+// Derives a generic ed25519-bip32 child key while preserving hardened/normal path segments.
+__device__ __forceinline__ void get_child_key_ed25519_bip32(const extended_private_key_t* __restrict__ master_private, const uint32_t* __restrict__ d_derivations, const uint32_t currentStringLength, uint32_t& processedElements, uint8_t* out32)
 {
 	if (currentStringLength == 0) {
 		memcpy(out32, master_private->key, 32);

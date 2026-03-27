@@ -270,13 +270,15 @@ wallet-passphrase-example
 | Option | Meaning |
 | --- | --- |
 | `-c TYPES` | Target family selection. Default: `cus` |
-| `-d_type 1|2|3` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both` |
+| `-d_type 1|2|3|4` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 [TEST]` |
 
 If `-d_type` is omitted, routing stays target-native:
 
 - secp-style targets use the usual BIP32/secp256k1 path
 - Solana and TON stay on their native ed25519-oriented route
 - `-c` still controls the target family that is generated and checked, even when `-d_type` overrides the derivation engine
+- `-d_type 4` is explicit-only, stays on the compatibility evaluator, and is never included in mixed mode
+- Live status shows both `candidates/s` and `hashes/s`; hash throughput grows with derivation count, selected targets, and derivation policy
 
 ### Filters and direct targets
 
@@ -500,6 +502,7 @@ Try `-d_type`:
 - `-d_type 1` for forced BIP32/secp256k1
 - `-d_type 2` for forced SLIP-0010 ed25519
 - `-d_type 3` to try both
+- `-d_type 4` for experimental `ed25519-bip32` checks only
 
 ### `-save` does not show the raw hash anymore
 
@@ -800,13 +803,15 @@ wallet-passphrase-example
 | Аргумент | Что делает |
 | --- | --- |
 | `-c TYPES` | Выбор target families. По умолчанию `cus` |
-| `-d_type 1|2|3` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта` |
+| `-d_type 1|2|3|4` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 [TEST]` |
 
 Если `-d_type` не указан, остаётся target-native логика:
 
 - secp-ориентированные цели идут через обычный BIP32/secp256k1
 - Solana и TON остаются на своём native ed25519-маршруте
 - `-c` при этом всё равно задаёт именно target family, которую нужно строить и проверять
+- `-d_type 4` включается только явно, всегда идёт через compatibility path и не входит в mixed-режим
+- В live status показываются и `candidates/s`, и `hashes/s`; hash throughput растёт вместе с числом derivations, выбранных целей и derivation policy
 
 ### Filters и direct targets
 
@@ -1030,6 +1035,7 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 - `-d_type 1` — принудительный BIP32/secp256k1
 - `-d_type 2` — принудительный SLIP-0010 ed25519
 - `-d_type 3` — оба варианта
+- `-d_type 4` — экспериментальный `ed25519-bip32` test-режим
 
 ### С `-save` перестал показываться raw hash
 

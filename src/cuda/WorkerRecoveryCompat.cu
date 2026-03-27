@@ -304,6 +304,7 @@ __global__ KERNEL_LAUNCH_BOUNDS void workerRecoveryCompat(bool* isResult, bool* 
 
     const bool use_secp_derivation = secp256_d;
     const bool use_ed25519_derivation = ed25519_d;
+    const bool use_ed25519_bip32_derivation = ed25519_bip32_d;
 
     const bool compressed = compressed_dev;
     const bool uncompressed = uncompressed_dev;
@@ -317,7 +318,7 @@ __global__ KERNEL_LAUNCH_BOUNDS void workerRecoveryCompat(bool* isResult, bool* 
 
     const bool need_secp_targets = compressed || uncompressed || segwit || taproot || ethereum || xpoint;
     const bool need_ed_targets = solana || ton || ton_all;
-    if ((!use_secp_derivation && !use_ed25519_derivation) || (!need_secp_targets && !need_ed_targets)) {
+    if ((!use_secp_derivation && !use_ed25519_derivation && !use_ed25519_bip32_derivation) || (!need_secp_targets && !need_ed_targets)) {
         return;
     }
 
@@ -364,7 +365,7 @@ __global__ KERNEL_LAUNCH_BOUNDS void workerRecoveryCompat(bool* isResult, bool* 
     extended_private_key_t* secp_master_private = nullptr;
     extended_private_key_t* ed25519_master_private = nullptr;
 
-    if (use_ed25519_derivation) {
+    if (use_ed25519_derivation || use_ed25519_bip32_derivation) {
 #pragma unroll
         for (int x = 0; x < 16 / 4; ++x) {
             ed_ipad[x] = 0x36363636u ^ reinterpret_cast<const uint32_t*>(&ed_key_swap)[x];
@@ -414,6 +415,7 @@ __global__ KERNEL_LAUNCH_BOUNDS void workerRecoveryCompat(bool* isResult, bool* 
 
     uint32_t processed_elements_se = 0u;
     uint32_t processed_elements_ed = 0u;
+    uint32_t processed_elements_ed_bip32 = 0u;
     deriv_cache_secp256k1_t secp_deriv_cache = {};
     deriv_cache_ed25519_t ed_deriv_cache = {};
     deriv_cache_secp256k1_t* secp_deriv_cache_ptr = (der_indexes_size > (der_start_index + 1u)) ? &secp_deriv_cache : nullptr;
@@ -444,6 +446,18 @@ __global__ KERNEL_LAUNCH_BOUNDS void workerRecoveryCompat(bool* isResult, bool* 
             }
             if (need_ed_targets) {
                 evaluate_ed25519_targets_from_private_key(isResult, buffResult, tIx, c_path, phrase, line_len, ed_child_private, solana, ton, ton_all, round, pass_start, pass_size_i, RESULT_DERIVATION_SLIP0010_ED25519);
+            }
+        }
+
+        if (use_ed25519_bip32_derivation && ed25519_master_private != nullptr) {
+            unsigned char ed_bip32_child_private[32] = { 0 };
+            get_child_key_ed25519_bip32(ed25519_master_private, d_derivations, current_string_length, processed_elements_ed_bip32, ed_bip32_child_private);
+
+            if (need_secp_targets) {
+                evaluate_secp_targets_from_private_key(isResult, buffResult, tIx, c_path, phrase, line_len, ed_bip32_child_private, precPtr, precPitch, compressed, uncompressed, segwit, taproot, ethereum, xpoint, round, pass_start, pass_size_i, RESULT_DERIVATION_ED25519_BIP32_TEST);
+            }
+            if (need_ed_targets) {
+                evaluate_ed25519_targets_from_private_key(isResult, buffResult, tIx, c_path, phrase, line_len, ed_bip32_child_private, solana, ton, ton_all, round, pass_start, pass_size_i, RESULT_DERIVATION_ED25519_BIP32_TEST);
             }
         }
 

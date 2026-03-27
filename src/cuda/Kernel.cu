@@ -101,6 +101,7 @@ __device__ int64_t* d_round;
 
 __device__ bool secp256_d = false;
 __device__ bool ed25519_d = false;
+__device__ bool ed25519_bip32_d = false;
 __device__ bool compressed_dev = false;
 __device__ bool uncompressed_dev = false;
 __device__ bool segwit_dev = false;
@@ -134,10 +135,11 @@ __global__ void setFULL()
 }
 
 // Kernel entry point: SetCurve.
-__global__ void SetCurve(bool secp256, bool ed25519, bool compressed, bool uncompressed, bool segwit, bool taproot, bool ethereum, bool xpoint, bool solana, bool ton, bool ton_all) {
+__global__ void SetCurve(bool secp256, bool ed25519, bool ed25519_bip32, bool compressed, bool uncompressed, bool segwit, bool taproot, bool ethereum, bool xpoint, bool solana, bool ton, bool ton_all) {
 
 	secp256_d = secp256;
 	ed25519_d = ed25519;
+	ed25519_bip32_d = ed25519_bip32;
 	compressed_dev = compressed;
 	uncompressed_dev = uncompressed;
 	segwit_dev = segwit;

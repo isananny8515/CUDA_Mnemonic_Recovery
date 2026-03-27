@@ -52,6 +52,7 @@ static constexpr uint8_t ENDO_GROUP_XPOINT = 5u;
 // Recovery derivation-engine tags stored alongside found results.
 static constexpr uint8_t RESULT_DERIVATION_BIP32_SECP256K1 = 1u;
 static constexpr uint8_t RESULT_DERIVATION_SLIP0010_ED25519 = 2u;
+static constexpr uint8_t RESULT_DERIVATION_ED25519_BIP32_TEST = 3u;
 
 extern __constant__ uint32_t _NUM_TARGET_HASHES[1];
 extern __constant__ uint32_t HASH_TARGET_WORDS[5];
@@ -136,6 +137,7 @@ extern __device__ uint16_t* d_pass_size;
 
 extern __device__ bool secp256_d;
 extern __device__ bool ed25519_d;
+extern __device__ bool ed25519_bip32_d;
 extern __device__ bool compressed_dev;
 extern __device__ bool uncompressed_dev;
 extern __device__ bool segwit_dev;
@@ -191,7 +193,7 @@ __global__ void setDict(int lang);
 __global__ void setDictPointer(const char (*dict)[34]);
 __global__ void rand_state();
 __global__ void setFilterType(bool bloomUse, bool xorFilter, bool xorFilterUn, bool xorFilterUc, bool xorFilterHc);
-__global__ void SetCurve(bool secp256, bool ed25519, bool compressed, bool uncompressed, bool segwit, bool taproot, bool ethereum, bool xpoint, bool solana, bool ton, bool ton_all);
+__global__ void SetCurve(bool secp256, bool ed25519, bool ed25519_bip32, bool compressed, bool uncompressed, bool segwit, bool taproot, bool ethereum, bool xpoint, bool solana, bool ton, bool ton_all);
 __global__ void set_iter(uint64_t pbkdf_iter);
 __global__ void ecmult_big_create(secp256k1_gej* gej_temp, secp256k1_fe* z_ratio, secp256k1_ge_storage* precPtr, size_t precPitch, unsigned int bits);
 

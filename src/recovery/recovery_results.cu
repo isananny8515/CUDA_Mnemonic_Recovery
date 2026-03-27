@@ -168,6 +168,8 @@ const char* derivation_type_name(const uint8_t derivation_type, const uint8_t co
         return "bip32-secp256k1";
     case RESULT_DERIVATION_SLIP0010_ED25519:
         return "slip0010-ed25519";
+    case RESULT_DERIVATION_ED25519_BIP32_TEST:
+        return "ed25519-bip32-test";
     default:
         switch (decode_base_type(coin_type)) {
         case 0x60:
