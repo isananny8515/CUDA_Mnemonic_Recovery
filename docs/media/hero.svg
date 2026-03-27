@@ -36,8 +36,8 @@
     <text x="120" y="340" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="17">-d_type 3 -hash 1a4603d1...</text>
 
     <text x="120" y="394" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] Recovery summary: tested=33554432 checksum-valid=2097152</text>
-    <text x="120" y="428" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] Recovery slot 1/4 (GPU 0): tested=8388608 checksum-valid=524288</text>
-    <text x="120" y="462" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] Recovery slot 2/4 (GPU 1): tested=8388608 checksum-valid=524288</text>
+    <text x="120" y="428" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] GPU 0: tested=8388608 checksum-valid=524288</text>
+    <text x="120" y="462" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] GPU 1: tested=8388608 checksum-valid=524288</text>
     <text x="120" y="496" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="15">[!] Recovery tested 33554432 candidates. Found: 8</text>
   </g>
 

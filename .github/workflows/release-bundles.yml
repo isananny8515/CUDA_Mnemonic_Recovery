@@ -84,10 +84,8 @@ jobs:
           CUDA Toolkit: ${CUDA_VERSION}
           Architecture profile: ${{ matrix.label }}
           CUDA architectures: ${{ matrix.archs }}
-          Device LTO: ${{ matrix.dlto_note }}
-          Secp256k1 precompute window: 16-bit runtime default
           Intended hardware: ${{ matrix.family }}
-          Runtime notes: static CUDA runtime is enabled. A compatible NVIDIA driver is still required.
+          Driver requirement: a compatible NVIDIA driver is required on the target machine.
           Universal note: the universal sm_86-sm_120 bundle covers RTX 30xx through RTX 50xx. RTX 20xx uses the dedicated sm_75 build.
           EOF
 
@@ -175,10 +173,8 @@ jobs:
           CUDA Toolkit: $env:CUDA_VERSION
           Architecture profile: ${{ matrix.label }}
           CUDA architectures: ${{ matrix.archs }}
-          Device LTO: ${{ matrix.dlto_note }}
-          Secp256k1 precompute window: 16-bit runtime default
           Intended hardware: ${{ matrix.family }}
-          Runtime notes: static MSVC runtime and static CUDA runtime are enabled. A compatible NVIDIA driver is still required.
+          Driver requirement: a compatible NVIDIA driver is required on the target machine.
           Universal note: the universal sm_86-sm_120 bundle covers RTX 30xx through RTX 50xx. RTX 20xx uses the dedicated sm_75 build.
           "@ | Set-Content (Join-Path $pkgDir "BUILD.txt")
 

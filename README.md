@@ -50,10 +50,10 @@ It is built for practical recovery work: real wildcard templates, real derivatio
   <img src="./docs/media/multigpu-recovery.svg" alt="Multi GPU recovery example" width="880">
 </p>
 
-### Recovery Pipeline
+### Recovery Flow
 
 <p>
-  <img src="./docs/media/pipeline-diagram.svg" alt="Recovery pipeline diagram" width="880">
+  <img src="./docs/media/recovery-flow-diagram.svg" alt="Recovery flow diagram" width="880">
 </p>
 
 ### Multi-GPU Work Split
@@ -155,6 +155,14 @@ The Windows archive contains these build profiles:
 Release bundles are built with CUDA `12.8`. Pick a dedicated build when you want the best match for one GPU generation, or choose `universal-sm_86-sm_120` when you want one binary for RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
 
 The packaged binaries are intended to be easy to move between machines. A compatible NVIDIA driver is still required on the target machine.
+
+## Publication Notes
+
+- Reproducible benchmark methodology and measured results: [`BENCHMARKS.md`](./BENCHMARKS.md)
+- Validation coverage and release smoke matrix: [`VALIDATION.md`](./VALIDATION.md)
+- Release checklist for clean-room packaging: [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md)
+- Citation metadata for public and technical references: [`CITATION.cff`](./CITATION.cff)
+- High-level release history: [`CHANGELOG.md`](./CHANGELOG.md)
 
 ## Quick Start
 
@@ -262,7 +270,7 @@ wallet-passphrase-example
 | Option | Meaning |
 | --- | --- |
 | `-c TYPES` | Target family selection. Default: `cus` |
-| `-d_type <1/2/3/4>` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 [TEST]` |
+| `-d_type <1/2/3/4>` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 (experimental)` |
 
 If `-d_type` is omitted, the tool uses the usual derivation style for the selected target family:
 
@@ -271,6 +279,15 @@ If `-d_type` is omitted, the tool uses the usual derivation style for the select
 - `-c` still controls the target family that is generated and checked, even when `-d_type` overrides the derivation engine
 - `-d_type 4` is available only when requested explicitly and is never included in mixed mode
 - Live status shows both `candidates/s` and `hashes/s`; hash throughput grows with derivation count, selected targets, and derivation policy
+
+### Experimental `-d_type 4`
+
+`-d_type 4` keeps the `ed25519-bip32` path available for evaluation work.
+
+- It is opt-in only.
+- It is not part of `-d_type 3`.
+- It is not part of the main production-path claims in this README.
+- Validation coverage for this mode is tracked separately in [`VALIDATION.md`](./VALIDATION.md).
 
 ### Filters and direct targets
 
@@ -406,72 +423,30 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 
 What the tool does in multi-GPU mode:
 
-- initializes one recovery slot per selected GPU
-- splits the recovery workload across slots
-- keeps per-slot accounting
+- initializes one active worker context per selected GPU
+- splits the recovery workload across devices
+- keeps per-device accounting
 - aggregates final tested / checksum-valid totals
 - keeps async save workers alive until the end of the run
 
-### Real local benchmark
+### Benchmark summary
 
-The numbers below were measured on this machine. This benchmark uses:
+Full methodology, fixture details, run conditions, and stress-case notes live in [`BENCHMARKS.md`](./BENCHMARKS.md).
 
-- mnemonic: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
-- derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
-- target family: `-c c`
-- exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
-- build: Windows Release, `sm_89`
-- measurement rule: end-to-end wall-clock until the first real `[!] Found:` line
-- hardware: `4x RTX 4090`
-- power limit: all four GPUs were capped to `50% TDP` with MSI Afterburner
-- note: at `100% TDP`, the absolute speed will be higher than the numbers in this table
+Short local summary from the current benchmark set:
 
-Benchmark fixture:
+| GPUs | Devices | Workload | Time to first hit |
+| --- | --- | --- | --- |
+| `1` | `2` | `1 template`, `3 missing words`, exact hash | `550.07 s` |
+| `2` | `0,2` | same | `211.58 s` |
+| `4` | `0,1,2,3` | same | `41.59 s` |
 
-- [`examples/bench/templates-1x-3missing.txt`](./examples/bench/templates-1x-3missing.txt)
+Stress-case summary:
 
-Command pattern:
+- `1 GPU`, device `2`, `4 missing words`, `10 minute` limit: no hit within `600.37 s`
+- `4 GPU`, devices `0,1,2,3`, same stress fixture: first hit in `15.75 s`
 
-```bash
-CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-3missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
-```
-
-Measured results:
-
-| GPUs | Devices | Workload | Wall-clock to first hit | Last live speed before hit |
-| --- | --- | --- | --- | --- |
-| `1` | `2` | `1 template`, `3 missing words`, exact hash | `550.07 s` | `12.53 M candidates/s` |
-| `2` | `0,2` | same | `211.58 s` | `26.87 M candidates/s` |
-| `4` | `0,1,2,3` | same | `41.59 s` | `54.15 M candidates/s` |
-
-Measured wall-clock speedup from the same fixture:
-
-- `2 GPU`: about `2.60x`
-- `4 GPU`: about `13.23x`
-
-### Stress case: 4 missing words
-
-The stress fixture is separate on purpose:
-
-- [`examples/bench/templates-1x-4missing.txt`](./examples/bench/templates-1x-4missing.txt)
-
-Command pattern:
-
-```bash
-CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-4missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
-```
-
-Measured result:
-
-| Scenario | Result |
-| --- | --- |
-| `1 GPU`, device `2`, same exact hash, `10 minute` limit | no hit within `600.37 s` |
-| `4 GPU`, devices `0,1,2,3`, same exact hash | first hit in `15.75 s`, last live speed `56.42 M candidates/s` |
-
-Extra fixtures in this repository:
-
-- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) is still useful as a short smoke test for counters and output formatting
-- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) remains a heavier batch-style fixture if you want a longer non-showcase run
+For the exact commands, fixture files, hardware notes, repeated-run policy, and measurement boundaries, see [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Troubleshooting
 
@@ -520,6 +495,7 @@ Yes. Use `-device LIST`, for example:
 - `third_party/` bundled crypto and PBKDF2 code
 - `assets/wordlists/` source BIP39 wordlists
 - `examples/` ready-to-run sample inputs
+- `scripts/` local validation helpers
 - `docs/media/` README visuals and social preview assets
 
 ## Responsible Use
@@ -575,10 +551,10 @@ This public release is also an example of the kind of performance-oriented softw
   <img src="./docs/media/multigpu-recovery.svg" alt="Скриншот multi GPU recovery" width="920">
 </p>
 
-### Схема Recovery Pipeline
+### Схема Recovery Flow
 
 <p>
-  <img src="./docs/media/pipeline-diagram.svg" alt="Схема recovery pipeline" width="920">
+  <img src="./docs/media/recovery-flow-diagram.svg" alt="Схема recovery flow" width="920">
 </p>
 
 ### Схема Multi-GPU Разделения Нагрузки
@@ -680,6 +656,14 @@ GitHub Actions подготавливает два дистрибутивных 
 Release-сборки делаются на CUDA `12.8`. Если нужен максимально подходящий вариант под одно поколение GPU, берите dedicated-профиль. Если нужен один бинарник для современных карт, выбирайте `universal-sm_86-sm_120` для RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
 
 Пакеты подготовлены так, чтобы их было удобно переносить между машинами. Совместимый NVIDIA driver на целевой машине всё равно обязателен.
+
+## Publication Notes
+
+- Воспроизводимая benchmark-методика и measured results: [`BENCHMARKS.md`](./BENCHMARKS.md)
+- Validation coverage и release smoke matrix: [`VALIDATION.md`](./VALIDATION.md)
+- Release checklist для clean-room packaging: [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md)
+- Citation metadata для публичных и технических ссылок: [`CITATION.cff`](./CITATION.cff)
+- Краткая release history: [`CHANGELOG.md`](./CHANGELOG.md)
 
 ## Быстрый Старт
 
@@ -787,7 +771,7 @@ wallet-passphrase-example
 | Аргумент | Что делает |
 | --- | --- |
 | `-c TYPES` | Выбор target families. По умолчанию `cus` |
-| `-d_type <1/2/3/4>` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 [TEST]` |
+| `-d_type <1/2/3/4>` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 (experimental)` |
 
 Если `-d_type` не указан, инструмент использует обычный тип derivation для выбранной target family:
 
@@ -796,6 +780,15 @@ wallet-passphrase-example
 - `-c` при этом всё равно задаёт именно target family, которую нужно строить и проверять
 - `-d_type 4` включается только явно и не входит в mixed-режим
 - В live status показываются и `candidates/s`, и `hashes/s`; hash throughput растёт вместе с числом derivations, выбранных целей и derivation policy
+
+### Experimental `-d_type 4`
+
+`-d_type 4` оставляет `ed25519-bip32` доступным как режим для отдельной оценки и проверки.
+
+- Он включается только явно.
+- Он не входит в `-d_type 3`.
+- Он не входит в основные production-claims этого README.
+- Отдельное покрытие для этого режима зафиксировано в [`VALIDATION.md`](./VALIDATION.md).
 
 ### Filters и direct targets
 
@@ -931,72 +924,30 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 
 Что делает инструмент в multi-GPU режиме:
 
-- создаёт отдельный recovery slot на каждую выбранную GPU
-- делит workload между слотами
-- ведёт per-slot статистику
+- создаёт отдельный рабочий контекст на каждую выбранную GPU
+- делит workload между устройствами
+- ведёт per-device статистику
 - агрегирует итоговые tested / checksum-valid totals
 - сохраняет async save workers до конца выполнения
 
-### Реальный локальный benchmark
+### Краткий benchmark summary
 
-Цифры ниже сняты на этой машине. Для benchmark использовались:
+Полная benchmark-методика, описание fixture’ов, условия запуска и stress-case notes вынесены в [`BENCHMARKS.md`](./BENCHMARKS.md).
 
-- мнемоника: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
-- derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
-- target family: `-c c`
-- exact hash target: `1a4603d1ff9121515d02a6fee37c20829ca522b0`
-- сборка: Windows Release, `sm_89`
-- правило измерения: полный wall-clock до первой реальной строки `[!] Found:`
-- железо: `4x RTX 4090`
-- ограничение питания: все четыре карты были ограничены до `50% TDP` через MSI Afterburner
-- примечание: при `100% TDP` абсолютная скорость будет выше, чем в этой таблице
+Короткая локальная сводка из текущего benchmark-набора:
 
-Основной benchmark-fixture:
+| GPU | Устройства | Нагрузка | Время до первого hit |
+| --- | --- | --- | --- |
+| `1` | `2` | `1 шаблон`, `3 пропущенных слова`, exact hash | `550.07 s` |
+| `2` | `0,2` | то же самое | `211.58 s` |
+| `4` | `0,1,2,3` | то же самое | `41.59 s` |
 
-- [`examples/bench/templates-1x-3missing.txt`](./examples/bench/templates-1x-3missing.txt)
+Stress-case summary:
 
-Шаблон команды:
+- `1 GPU`, устройство `2`, `4 пропущенных слова`, лимит `10 минут`: hit не найден за `600.37 s`
+- `4 GPU`, устройства `0,1,2,3`, тот же stress-fixture: первый hit через `15.75 s`
 
-```bash
-CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-3missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
-```
-
-Измеренные результаты:
-
-| GPU | Устройства | Нагрузка | Wall-clock до первого hit | Последняя live speed line перед hit |
-| --- | --- | --- | --- | --- |
-| `1` | `2` | `1 шаблон`, `3 пропущенных слова`, exact hash | `550.07 s` | `12.53 M candidates/s` |
-| `2` | `0,2` | то же самое | `211.58 s` | `26.87 M candidates/s` |
-| `4` | `0,1,2,3` | то же самое | `41.59 s` | `54.15 M candidates/s` |
-
-Измеренное ускорение по wall-clock на этом же fixture:
-
-- `2 GPU`: около `2.60x`
-- `4 GPU`: около `13.23x`
-
-### Stress-кейс: 4 пропущенных слова
-
-Для stress-сценария используется отдельный fixture:
-
-- [`examples/bench/templates-1x-4missing.txt`](./examples/bench/templates-1x-4missing.txt)
-
-Шаблон команды:
-
-```bash
-CUDA_Mnemonic_Recovery -device <LIST> -recovery -i examples/bench/templates-1x-4missing.txt -d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0
-```
-
-Измеренный результат:
-
-| Сценарий | Результат |
-| --- | --- |
-| `1 GPU`, устройство `2`, тот же exact hash, лимит `10 минут` | hit не найден за `600.37 s` |
-| `4 GPU`, устройства `0,1,2,3`, тот же exact hash | первый hit через `15.75 s`, последняя live speed line `56.42 M candidates/s` |
-
-Дополнительные fixtures в репозитории:
-
-- [`examples/bench/templates-8x-2missing.txt`](./examples/bench/templates-8x-2missing.txt) по-прежнему удобен как короткий smoke-тест для counters и форматирования вывода
-- [`examples/bench/templates-8x-3missing.txt`](./examples/bench/templates-8x-3missing.txt) остаётся более тяжёлым batch-style fixture для длинных запусков вне README-showcase
+За точными командами, fixture-файлами, оговорками по hardware и границами измерений см. [`BENCHMARKS.md`](./BENCHMARKS.md).
 
 ## Troubleshooting
 
@@ -1045,6 +996,7 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 - `third_party/` — bundled crypto и PBKDF2 код
 - `assets/wordlists/` — исходные BIP39 wordlists
 - `examples/` — готовые примерные входы
+- `scripts/` — локальные validation-скрипты
 - `docs/media/` — визуалы README и social preview assets
 
 ## Responsible Use

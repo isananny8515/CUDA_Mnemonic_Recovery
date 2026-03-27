@@ -10,8 +10,8 @@
   <text x="66" y="190" fill="#f8fafc" font-family="JetBrains Mono, Consolas, monospace" font-size="20">-d examples/derivations/default.txt -c c -hash 1a4603d1ff9121515d02a6fee37c20829ca522b0</text>
   <text x="66" y="244" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery task: words=12 missing=3 dict=bip39-en.txt</text>
   <text x="66" y="276" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Candidates to test: ~8.589935e+09 | expected checksum-valid: ~5.368709e+08</text>
-  <text x="66" y="308" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery engine: staged GPU pipeline (checksum + seed + derivation/hash)</text>
-  <text x="66" y="360" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 12.53 M candidates/s | tested=6947864576 | checksum-valid=0 | found=0</text>
+  <text x="66" y="308" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Active CUDA devices: 2</text>
+  <text x="66" y="360" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Recovery speed: 12.53 M candidates/s | 87.71 M hashes/s | tested=6947864576 | checksum-valid=434241536 | found=0</text>
   <text x="66" y="416" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">[!] Found: adapt access alert human kiwi rough pottery level soon funny burst divorce:</text>
   <text x="66" y="448" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">m/44'/0'/0'/0/0:1e1985ee8e215c7250016c04c410a48299710cccf95fed7a749177c436f25df9:</text>
   <text x="66" y="480" fill="#e2e8f0" font-family="JetBrains Mono, Consolas, monospace" font-size="18">COMPRESSED:1a4603d1ff9121515d02a6fee37c20829ca522b0</text>

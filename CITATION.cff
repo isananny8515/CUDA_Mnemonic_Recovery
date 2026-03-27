@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use CUDA_Mnemonic_Recovery in a publication or technical write-up, please cite it using the metadata below."
+title: "CUDA_Mnemonic_Recovery"
+version: "1.0.0"
+date-released: 2026-03-27
+license: "Apache-2.0"
+repository-code: "https://github.com/XopMC/CUDA_Mnemonic_Recovery"
+url: "https://github.com/XopMC/CUDA_Mnemonic_Recovery"
+authors:
+  - family-names: "Khoroshavin"
+    given-names: "Mikhail"
+    alias: "XopMC"
+keywords:
+  - CUDA
+  - BIP39
+  - mnemonic recovery
+  - multi-GPU
+  - Bitcoin
+  - Ethereum
+  - Solana
+  - TON

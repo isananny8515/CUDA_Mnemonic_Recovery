@@ -269,11 +269,6 @@ thread_local uint64_t* p_seed = nullptr;
 thread_local unsigned long long* p_results_count = nullptr;
 
 
-thread_local size_t free_gpu_start = 0;
-thread_local size_t total_gpu_start = 0;
-thread_local size_t free_gpu_end = 0;
-thread_local size_t total_gpu_end = 0;
-
 #if defined(_WIN32) || defined(_WIN64)
 thread_local const char* g_crash_stage = "startup";
 thread_local int g_crash_device_hint = -1;
@@ -1301,9 +1296,7 @@ static cudaError_t dispatch_recovery_mode_multi_gpu(const char* mode_name, Fn&& 
         g_recovery_run_stats.tested_total = tested_sum;
         g_recovery_run_stats.emitted_total = emitted_sum;
         for (size_t gpu_idx = 0; gpu_idx < gpu_count; ++gpu_idx) {
-            printf("[!] Recovery slot %llu/%llu (GPU %d): tested=%llu checksum-valid=%llu [!]\n",
-                static_cast<unsigned long long>(gpu_idx + 1u),
-                static_cast<unsigned long long>(gpu_count),
+            printf("[!] Recovery device %d: tested=%llu checksum-valid=%llu [!]\n",
                 g_gpu_contexts[gpu_idx].device_id,
                 static_cast<unsigned long long>(tested_totals[gpu_idx]),
                 static_cast<unsigned long long>(emitted_totals[gpu_idx]));
@@ -2804,7 +2797,7 @@ static bool recovery_emit_task_candidates_gpu(RecoveryGpuDirectContext& ctx, con
                 checksum_blocks,
                 launch_threads);
             if (st != cudaSuccess) {
-                err = "launchWorkerRecoveryChecksum failed";
+                err = "failed to launch GPU checksum processing";
                 return false;
             }
 
@@ -2940,7 +2933,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
     const int missing_count = static_cast<int>(task.missing_positions.size());
 
     if (words_count_local <= 0 || words_count_local > 48 || (words_count_local % 3) != 0) {
-        err = "unsupported word count for fused recovery";
+        err = "unsupported word count for GPU-accelerated recovery";
         return false;
     }
 
@@ -2949,7 +2942,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
 
     uint64_t low_space_candidates = 0ull;
     if (!recovery_pow_2048_u64(low_missing_count, low_space_candidates)) {
-        err = "internal error: invalid fused wildcard split";
+        err = "internal error: invalid wildcard split";
         return false;
     }
 
@@ -3019,7 +3012,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
     auto run_low_space = [&](const uint64_t range_start, const uint64_t range_count) -> bool {
         st = cudaMemcpy(d_base_ids, active_base_ids.data(), active_base_ids.size() * sizeof(uint16_t), cudaMemcpyHostToDevice);
         if (st != cudaSuccess) {
-            err = "cudaMemcpy fused d_base_ids failed";
+            err = "failed to upload recovery base indices";
             return false;
         }
 
@@ -3045,7 +3038,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
 
             st = cudaMemset(d_out_count, 0, sizeof(uint32_t));
             if (st != cudaSuccess) {
-                err = "cudaMemset fused d_out_count failed";
+                err = "failed to reset the recovery candidate counter";
                 return false;
             }
 
@@ -3062,14 +3055,14 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
                 checksum_blocks,
                 launch_threads);
             if (st != cudaSuccess) {
-                err = "launchWorkerRecoveryChecksum (staged) failed";
+                err = "GPU checksum processing failed";
                 return false;
             }
 
             uint32_t found_total = 0u;
             st = cudaMemcpy(&found_total, d_out_count, sizeof(uint32_t), cudaMemcpyDeviceToHost);
             if (st != cudaSuccess) {
-                err = "cudaMemcpy fused d_out_count failed";
+                err = "failed to read the recovery candidate count";
                 return false;
             }
 
@@ -3100,7 +3093,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
                     eval_blocks,
                     launch_threads);
                 if (st != cudaSuccess) {
-                    err = "launchWorkerRecoverySeedBatch failed";
+                    err = "GPU seed processing failed";
                     return false;
                 }
 
@@ -3123,13 +3116,13 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
                     eval_blocks,
                     launch_threads);
                 if (st != cudaSuccess) {
-                    err = "launchWorkerRecoveryEvalMasterBatch failed";
+                    err = "GPU target validation failed";
                     return false;
                 }
 
                 st = cudaDeviceSynchronize();
                 if (st != cudaSuccess) {
-                    err = "cudaDeviceSynchronize after staged eval failed";
+                    err = "device synchronization failed during recovery validation";
                     return false;
                 }
             }
@@ -3157,19 +3150,19 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
     };
 
     st = cudaMalloc(reinterpret_cast<void**>(&d_base_ids), base_ids.size() * sizeof(uint16_t));
-    if (st != cudaSuccess) { err = "cudaMalloc fused d_base_ids failed"; goto cleanup_fused; }
+    if (st != cudaSuccess) { err = "failed to allocate recovery workspace"; goto cleanup_fused; }
     if (low_missing_count > 0) {
         st = cudaMalloc(reinterpret_cast<void**>(&d_missing_positions), low_missing_positions.size() * sizeof(int));
-        if (st != cudaSuccess) { err = "cudaMalloc fused d_missing_positions failed"; goto cleanup_fused; }
+        if (st != cudaSuccess) { err = "failed to allocate recovery workspace"; goto cleanup_fused; }
         st = cudaMemcpy(d_missing_positions, low_missing_positions.data(), low_missing_positions.size() * sizeof(int), cudaMemcpyHostToDevice);
-        if (st != cudaSuccess) { err = "cudaMemcpy fused d_missing_positions failed"; goto cleanup_fused; }
+        if (st != cudaSuccess) { err = "failed to upload recovery workspace data"; goto cleanup_fused; }
     }
     st = cudaMalloc(reinterpret_cast<void**>(&d_out_ids), out_ids_count * sizeof(uint16_t));
-    if (st != cudaSuccess) { err = "cudaMalloc fused d_out_ids failed"; goto cleanup_fused; }
+    if (st != cudaSuccess) { err = "failed to allocate recovery workspace"; goto cleanup_fused; }
     st = cudaMalloc(reinterpret_cast<void**>(&d_out_count), sizeof(uint32_t));
-    if (st != cudaSuccess) { err = "cudaMalloc fused d_out_count failed"; goto cleanup_fused; }
+    if (st != cudaSuccess) { err = "failed to allocate recovery workspace"; goto cleanup_fused; }
     st = cudaMalloc(reinterpret_cast<void**>(&d_master_words), master_words_count * sizeof(uint32_t));
-    if (st != cudaSuccess) { err = "cudaMalloc fused d_master_words failed"; goto cleanup_fused; }
+    if (st != cudaSuccess) { err = "failed to allocate recovery workspace"; goto cleanup_fused; }
 
     if (high_missing_count == 0) {
         if (!run_low_space(partition_low_start, partition_low_count)) {
@@ -3237,7 +3230,7 @@ static bool recovery_emit_task_candidates(RecoveryGpuDirectContext& ctx, const R
     }
 
     if (!gpu_err.empty()) {
-        fprintf(stderr, "[!] Recovery GPU checksum path disabled for this task: %s [!]\n", gpu_err.c_str());
+        fprintf(stderr, "[!] GPU-assisted checksum processing is unavailable for this task: %s [!]\n", gpu_err.c_str());
     }
 
     if (task.missing_positions.size() > 5u) {
@@ -3362,7 +3355,7 @@ cudaError_t processCudaRecovery() {
 
     const bool recovery_log_master = recovery_partition_is_log_owner();
     if (recovery_partition_active()) {
-        printf("[!] Recovery multiGPU: device=%d slot=%llu/%llu [!]\n",
+        printf("[!] Recovery multi-GPU session: active device %d [%llu/%llu] [!]\n",
             DEVICE_NR,
             static_cast<unsigned long long>(g_recovery_multi_gpu_partition.index + 1u),
             static_cast<unsigned long long>(g_recovery_multi_gpu_partition.count));
@@ -3431,18 +3424,6 @@ cudaError_t processCudaRecovery() {
             printf("[!] Candidates to test: ~%s | expected checksum-valid: ~%s\n",
                 recovery_format_scientific(combos).c_str(),
                 recovery_format_scientific(expected_valid).c_str());
-            if (use_fused_path) {
-                printf("[!] Recovery engine: staged GPU pipeline (checksum + seed + derivation/hash)\n");
-            }
-            else if (missing == 0u) {
-                printf("[!] Recovery checksum engine: direct (no wildcard expansion)\n");
-            }
-            else if (missing <= 5u) {
-                printf("[!] Recovery checksum engine: GPU kernel (WorkerRecovery)\n");
-            }
-            else {
-                printf("[!] Recovery checksum engine: GPU chunked kernel (WorkerRecovery, wildcards > 5)\n");
-            }
         }
 
         tasks.emplace_back(std::move(task));
@@ -3458,10 +3439,6 @@ cudaError_t processCudaRecovery() {
         fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
         return cudaErrorUnknown;
     }
-    if (recovery_log_master && !use_fused_path) {
-        printf("[!] Recovery fused path: disabled (using compatibility pipeline) [!]\n");
-    }
-
     cudaError_t st = cudaSuccess;
     uint64_t tested_total = 0;
     uint64_t emitted_total = 0;
@@ -3500,7 +3477,7 @@ cudaError_t processCudaRecovery() {
         g_recovery_tested_total.fetch_add(tested, std::memory_order_relaxed);
         if (recovery_log_master) {
             if (recovery_partition_active()) {
-                printf("[!] Recovery task done (%llu/%llu) [slot-local]: tested=%llu checksum-valid=%llu [!]\n",
+                printf("[!] Recovery task done (%llu/%llu) [device-local]: tested=%llu checksum-valid=%llu [!]\n",
                     static_cast<unsigned long long>(i + 1u),
                     static_cast<unsigned long long>(tasks.size()),
                     static_cast<unsigned long long>(tested),
@@ -3616,9 +3593,6 @@ int RunRecoveryApp(int argc, char** argv)
 
     unsigned int requested_threads = set_thread ? BLOCK_THREADS : 0u;
     unsigned int requested_blocks = set_block ? BLOCK_NUMBER : 0u;
-
-    std::cout << "[!] Secp256k1 precompute table size: " << PARAM_ECMULT_WINDOW_SIZE << " bits\n";
-    std::cout << "[!] Starting allocation for " << MAX_FOUNDS << " found slots [!]\n";
 
     if (!initialize_gpu_contexts(requested_threads, requested_blocks)) {
         fprintf(stderr, "[!] Error: failed to initialize selected GPU devices [!]\n");
@@ -4174,19 +4148,15 @@ bool checkDevice() {
         blocks_per_sm = std::min(blocks_per_sm, max_blocks_per_sm);
 
         BLOCK_NUMBER = std::max<unsigned int>(1u, static_cast<unsigned int>(props.multiProcessorCount) * blocks_per_sm);
-        fprintf(stderr, "[!] Auto-tuned recovery launch: %u blocks/SM (derivations: %zu)\n", blocks_per_sm, deriv_count);
     }
 
     workSize = static_cast<uint64_t>(BLOCK_NUMBER) * static_cast<uint64_t>(BLOCK_THREADS) * static_cast<uint64_t>(THREAD_STEPS);
-    fprintf(stderr, "[!] %s (%2d SMs | Blocks: %u | Threads: %u)\n", props.name, props.multiProcessorCount, BLOCK_NUMBER, BLOCK_THREADS);
     return true;
 }
 
 // mallocFounds: allocates founds.
 bool mallocFounds(uint32_t N) {
     cudaError_t cudaStatus;
-    size_t free0, total0, free1, total1;
-    cudaMemGetInfo(&free0, &total0);
     cudaStatus = cudaMalloc(&p_str, static_cast<size_t>(N) * 512u);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "[!] CUDA malloc for mnemonic strings failed [!]\n");
@@ -4355,8 +4325,6 @@ bool mallocFounds(uint32_t N) {
     }
 
     cudaDeviceSynchronize();
-    cudaMemGetInfo(&free1, &total1);   // Snapshot after allocations.
-    printf("[!] GPU %d founds memory allocated: %.2f MiB [!]\n", DEVICE_NR, (free0 - free1) / 1024.0 / 1024.0);
     return true;
 }
 
@@ -4380,7 +4348,6 @@ cudaError_t prepareCuda() {
     //printf("prec big gen %d bit, please wait\n", bits);
     windows = (256 / bits) + 1;
     window_size = (size_t{ 1 } << (bits - 1));
-    printf("[!] GPU %d: preparing cuda device... Please wait... \n", DEVICE_NR);
     if (secp256_host || secp_target_host) {
         cudaStatus = cudaMallocPitch(&_dev_precomp, &pitch, sizeof(secp256k1_ge_storage) * window_size, windows);
         if (cudaStatus != cudaSuccess) {
@@ -4409,7 +4376,6 @@ cudaError_t prepareCuda() {
             fprintf(stderr, "[!] Cuda prepare failed: cudaDeviceSynchronize returned error code %d after launching kernel 'computeTable'! [!]\n", cudaStatus);
             goto Error;
         }
-        printf("[!] GPU %d: preparing finished \n", DEVICE_NR);
     Error:
         cudaFree(_dev_gej_temp);
         cudaFree(_dev_z_ratio);
@@ -4420,7 +4386,6 @@ cudaError_t prepareCuda() {
     if (bits != 8 && bits != 4 && bits != 2) {
         int g = ECMULT_GEN_PREC_G;
         int n = ECMULT_GEN_PREC_N;
-        printf("[!] prec gen %d bit, please wait [!]\n", bits);
         secp256k1_ge_storage* _dev_prec_table = new secp256k1_ge_storage[g * n];
         secp256k1_ge* _dev_prec = new secp256k1_ge[g * n];
         secp256k1_gej* _dev_precj = new secp256k1_gej[g * n];
@@ -4440,7 +4405,6 @@ cudaError_t prepareCuda() {
             fprintf(stderr, "[!] Cuda prepare failed: cudaDeviceSynchronize returned error code %d after launching kernel 'computeTable'! [!]\n", cudaStatus);
             goto Error;
         }
-        printf("[!] GPU %d: prec gen %d bit finished [!]\n", DEVICE_NR, bits);
     Error:
         cudaFree(_dev_precj);
         cudaFree(_dev_prec);
@@ -4563,8 +4527,6 @@ cudaError_t prepareCuda() {
             DEVICE_NR, hashTargetLenBytes, hashTargetHex.c_str());
     }
     printf("[!] GPU %d: all preparation finished.\n", DEVICE_NR);
-    cudaMemGetInfo(&free_gpu_end, &total_gpu_end);
-    printf("[!] GPU %d total memory used: %.2f MiB [!]\n", DEVICE_NR, (free_gpu_start - free_gpu_end) / 1024.0 / 1024.0);
     printf("-----------------------------------------------------------------\n");
     printf("[!] Loaded bloom filters on GPU %d: %lld\n", DEVICE_NR, gpu_bloom_loaded ? (long long)bloomFiles.size() : 0ll);
     printf("[!] Loaded uncompressed xor filters on GPU %d: %lld\n", DEVICE_NR, gpu_xor_un_loaded ? (long long)xorFilesUn.size() : 0ll);
@@ -4689,7 +4651,6 @@ static bool initialize_gpu_contexts(const unsigned int requested_threads, const 
             continue;
         }
 
-        cudaMemGetInfo(&free_gpu_start, &total_gpu_start);
         setFoundSize << <1, 1 >> > (MAX_FOUNDS);
         cudaError_t st = cudaDeviceSynchronize();
         if (st != cudaSuccess) {

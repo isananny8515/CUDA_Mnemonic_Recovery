@@ -14,7 +14,7 @@
   <text x="70" y="356" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-recovery -i FILE template file</text>
   <text x="70" y="386" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-d FILE           derivation file</text>
   <text x="70" y="416" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-c TYPES          c,u,s,r,x,e,S,t,T</text>
-  <text x="70" y="446" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-d_type 1|2|3     derivation engine policy</text>
+  <text x="70" y="446" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-d_type 1|2|3|4   derivation engine policy</text>
   <text x="70" y="476" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-hash HEX         exact target hash</text>
   <text x="70" y="506" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-bf / -xu / -xc / -xuc / -xh / -xx / -xb</text>
   <text x="70" y="536" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-pass VALUE|FILE  single passphrase or passphrase file</text>
@@ -22,5 +22,6 @@
   <text x="70" y="596" fill="#38bdf8" font-family="JetBrains Mono, Consolas, monospace" font-size="19">-save / -silent / -o FILE</text>
   <text x="70" y="652" fill="#22c55e" font-family="JetBrains Mono, Consolas, monospace" font-size="19">Notes:</text>
   <text x="70" y="684" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">- BIP39 recovery only</text>
-  <text x="70" y="714" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">- Unknown flags are rejected explicitly</text>
+  <text x="70" y="714" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">- d_type 4 is experimental and opt-in only</text>
+  <text x="70" y="744" fill="#cbd5e1" font-family="JetBrains Mono, Consolas, monospace" font-size="18">- Unknown flags are rejected explicitly</text>
 </svg>
