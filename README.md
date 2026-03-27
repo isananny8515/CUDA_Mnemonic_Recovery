@@ -123,8 +123,6 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
-Public recovery builds use a `16-bit` secp256k1 precompute window by default.
-
 ## Prebuilt GitHub Bundles
 
 GitHub Actions is set up to produce two distribution archives:
@@ -154,15 +152,9 @@ The Windows archive contains these build profiles:
 | `sm_120` | RTX 50xx / Blackwell | Dedicated Blackwell Windows build |
 | `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One Windows binary for modern cards from `sm_86` through `sm_120` |
 
-Release bundles are built with CUDA `12.8`. Linux dedicated single-architecture profiles use CUDA device link-time optimization (`-dlto`), while the `universal-sm_86-sm_120` build intentionally ships without `-dlto`. Windows release bundles use standard Release device linking for better compatibility on GitHub-hosted runners. CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
+Release bundles are built with CUDA `12.8`. Pick a dedicated build when you want the best match for one GPU generation, or choose `universal-sm_86-sm_120` when you want one binary for RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
 
-All public release bundles currently use a `16-bit` secp256k1 precompute window at runtime.
-
-The packaged binaries are prepared to be easy to move between machines:
-
-- Windows builds use the static MSVC runtime and static CUDA runtime.
-- Linux builds use the static CUDA runtime plus static `libstdc++` / `libgcc`.
-- A compatible NVIDIA driver is still required on the target machine.
+The packaged binaries are intended to be easy to move between machines. A compatible NVIDIA driver is still required on the target machine.
 
 ## Quick Start
 
@@ -272,12 +264,12 @@ wallet-passphrase-example
 | `-c TYPES` | Target family selection. Default: `cus` |
 | `-d_type <1/2/3/4>` | Force derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=check both`, `4=ed25519-bip32 [TEST]` |
 
-If `-d_type` is omitted, routing stays target-native:
+If `-d_type` is omitted, the tool uses the usual derivation style for the selected target family:
 
-- secp-style targets use the usual BIP32/secp256k1 path
-- Solana and TON stay on their native ed25519-oriented route
+- Bitcoin-like and Ethereum targets use the usual BIP32/secp256k1 path
+- Solana and TON use their usual ed25519-oriented derivation style
 - `-c` still controls the target family that is generated and checked, even when `-d_type` overrides the derivation engine
-- `-d_type 4` is explicit-only, stays on the compatibility evaluator, and is never included in mixed mode
+- `-d_type 4` is available only when requested explicitly and is never included in mixed mode
 - Live status shows both `candidates/s` and `hashes/s`; hash throughput grows with derivation count, selected targets, and derivation policy
 
 ### Filters and direct targets
@@ -422,7 +414,7 @@ What the tool does in multi-GPU mode:
 
 ### Real local benchmark
 
-The numbers below were measured on this machine after fixing the staged multi-GPU path. This benchmark uses:
+The numbers below were measured on this machine. This benchmark uses:
 
 - mnemonic: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
 - derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
@@ -520,7 +512,7 @@ Yes. Use `-device LIST`, for example:
 ## Repository Layout
 
 - `src/app/` entry point, CLI, config
-- `src/recovery/` recovery pipeline and host-side runtime
+- `src/recovery/` recovery flow and host-side orchestration
 - `src/crypto/` mnemonic, TON, filters, hashes
 - `src/cuda/` CUDA recovery workers and device control
 - `include/` project headers
@@ -656,8 +648,6 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
-Публичные recovery-сборки по умолчанию используют `16-bit` окно secp256k1 precompute.
-
 ## Готовые GitHub-Сборки
 
 GitHub Actions подготавливает два дистрибутивных архива:
@@ -687,15 +677,9 @@ GitHub Actions подготавливает два дистрибутивных 
 | `sm_120` | RTX 50xx / Blackwell | Отдельная Windows-сборка под Blackwell |
 | `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один Windows-бинарник для `sm_86`...`sm_120` |
 
-Release-сборки делаются на CUDA `12.8`. Для отдельных Linux single-arch профилей `CUDA device link-time optimization` (`-dlto`) остаётся включённым, а для `universal-sm_86-sm_120` он специально отключён. Windows release-пакеты используют обычный Release device linking ради стабильной сборки на GitHub-hosted runners. CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
+Release-сборки делаются на CUDA `12.8`. Если нужен максимально подходящий вариант под одно поколение GPU, берите dedicated-профиль. Если нужен один бинарник для современных карт, выбирайте `universal-sm_86-sm_120` для RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
 
-Во всех публичных release bundle’ах сейчас используется `16-bit` окно secp256k1 precompute на runtime-уровне.
-
-Пакеты подготовлены так, чтобы их было удобно переносить между машинами:
-
-- Windows-сборки используют статический MSVC runtime и статический CUDA runtime.
-- Linux-сборки используют статический CUDA runtime и статические `libstdc++` / `libgcc`.
-- Совместимый NVIDIA driver на целевой машине всё равно обязателен.
+Пакеты подготовлены так, чтобы их было удобно переносить между машинами. Совместимый NVIDIA driver на целевой машине всё равно обязателен.
 
 ## Быстрый Старт
 
@@ -805,12 +789,12 @@ wallet-passphrase-example
 | `-c TYPES` | Выбор target families. По умолчанию `cus` |
 | `-d_type <1/2/3/4>` | Переопределяет derivation engine: `1=bip32-secp256k1`, `2=slip0010-ed25519`, `3=оба варианта`, `4=ed25519-bip32 [TEST]` |
 
-Если `-d_type` не указан, остаётся target-native логика:
+Если `-d_type` не указан, инструмент использует обычный тип derivation для выбранной target family:
 
-- secp-ориентированные цели идут через обычный BIP32/secp256k1
-- Solana и TON остаются на своём native ed25519-маршруте
+- Bitcoin-подобные и Ethereum-цели идут через обычный BIP32/secp256k1
+- Solana и TON используют свой привычный ed25519-ориентированный тип derivation
 - `-c` при этом всё равно задаёт именно target family, которую нужно строить и проверять
-- `-d_type 4` включается только явно, всегда идёт через compatibility path и не входит в mixed-режим
+- `-d_type 4` включается только явно и не входит в mixed-режим
 - В live status показываются и `candidates/s`, и `hashes/s`; hash throughput растёт вместе с числом derivations, выбранных целей и derivation policy
 
 ### Filters и direct targets
@@ -955,7 +939,7 @@ CUDA_Mnemonic_Recovery -device 0-3 -recovery -i examples/templates.txt -d exampl
 
 ### Реальный локальный benchmark
 
-Цифры ниже сняты на этой машине уже после фикса staged multi-GPU path. Для benchmark использовались:
+Цифры ниже сняты на этой машине. Для benchmark использовались:
 
 - мнемоника: `adapt access alert human kiwi rough pottery level soon funny burst divorce`
 - derivations: [`examples/derivations/default.txt`](./examples/derivations/default.txt)
@@ -1053,7 +1037,7 @@ CUDA_Mnemonic_Recovery -recovery -i examples/templates.txt -d examples/derivatio
 ## Структура Репозитория
 
 - `src/app/` — entry point, CLI, config
-- `src/recovery/` — recovery pipeline и host runtime
+- `src/recovery/` — recovery flow и orchestration на стороне хоста
 - `src/crypto/` — mnemonic, TON, filters, hashes
 - `src/cuda/` — CUDA recovery workers и device control
 - `include/` — заголовки проекта
