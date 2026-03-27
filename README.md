@@ -123,6 +123,8 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
+Public recovery builds use a `16-bit` secp256k1 precompute window by default.
+
 ## Prebuilt GitHub Bundles
 
 GitHub Actions is set up to produce two distribution archives:
@@ -153,6 +155,8 @@ The Windows archive contains these build profiles:
 | `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | One Windows binary for modern cards from `sm_86` through `sm_120` |
 
 Release bundles are built with CUDA `12.8`. Linux dedicated single-architecture profiles use CUDA device link-time optimization (`-dlto`), while the `universal-sm_86-sm_120` build intentionally ships without `-dlto`. Windows release bundles use standard Release device linking for better compatibility on GitHub-hosted runners. CUDA `12.8` still covers `sm_61` and newer profiles, while the universal `sm_86-sm_120` build stays focused on RTX `30xx` through `50xx`. RTX `20xx` remains on the dedicated `sm_75` build.
+
+All public release bundles currently use a `16-bit` secp256k1 precompute window at runtime.
 
 The packaged binaries are prepared to be easy to move between machines:
 
@@ -649,6 +653,8 @@ cmake --preset windows-release -D CMAKE_CUDA_ARCHITECTURES=89
 cmake --build --preset windows-release --config Release
 ```
 
+Публичные recovery-сборки по умолчанию используют `16-bit` окно secp256k1 precompute.
+
 ## Готовые GitHub-Сборки
 
 GitHub Actions подготавливает два дистрибутивных архива:
@@ -679,6 +685,8 @@ GitHub Actions подготавливает два дистрибутивных 
 | `universal-sm_86-sm_120` | RTX 30xx / 40xx / 50xx | Один Windows-бинарник для `sm_86`...`sm_120` |
 
 Release-сборки делаются на CUDA `12.8`. Для отдельных Linux single-arch профилей `CUDA device link-time optimization` (`-dlto`) остаётся включённым, а для `universal-sm_86-sm_120` он специально отключён. Windows release-пакеты используют обычный Release device linking ради стабильной сборки на GitHub-hosted runners. CUDA `12.8` всё ещё покрывает `sm_61`, а универсальная сборка `sm_86-sm_120` остаётся сфокусированной на RTX `30xx`...`50xx`. Для RTX `20xx` остаётся отдельный профиль `sm_75`.
+
+Во всех публичных release bundle’ах сейчас используется `16-bit` окно secp256k1 precompute на runtime-уровне.
 
 Пакеты подготовлены так, чтобы их было удобно переносить между машинами:
 

@@ -943,6 +943,14 @@ AtomicCounter64 counterTotal = 0;
 std::atomic_uint64_t g_recovery_tested_total = 0;
 std::atomic_uint64_t g_recovery_emitted_total = 0;
 std::atomic_uint32_t Founds = 0;
+
+static inline void recovery_publish_checksum_valid_delta(const uint64_t delta) {
+    if (delta == 0ull) {
+        return;
+    }
+    g_recovery_emitted_total.fetch_add(delta, std::memory_order_relaxed);
+}
+
 string fileResult = "result.txt";
 FILE* OUT_FILE;
 vector<int> DEVICE_LIST = { 0 };
@@ -2508,6 +2516,8 @@ static bool recovery_emit_task_candidates_cpu(RecoveryGpuDirectContext& ctx, con
     err.clear();
     tested = 0;
     emitted = 0;
+    uint64_t emitted_pending = 0ull;
+    constexpr uint64_t kCpuChecksumPublishStride = 4096ull;
 
     std::vector<int> ids = task.ids;
     uint64_t linear_index = 0ull;
@@ -2519,10 +2529,11 @@ static bool recovery_emit_task_candidates_cpu(RecoveryGpuDirectContext& ctx, con
         }
         tested = 1;
         if (recovery_bip39_checksum_valid(ids)) {
-            emitted = 1;
             if (!recovery_direct_append_candidate_i32(ctx, task, ids, err)) {
                 return false;
             }
+            emitted = 1;
+            recovery_publish_checksum_valid_delta(1ull);
         }
         return true;
     }
@@ -2543,9 +2554,14 @@ static bool recovery_emit_task_candidates_cpu(RecoveryGpuDirectContext& ctx, con
 
             ++tested;
             if (recovery_bip39_checksum_valid(ids)) {
-                ++emitted;
                 if (!recovery_direct_append_candidate_i32(ctx, task, ids, err)) {
                     return false;
+                }
+                ++emitted;
+                ++emitted_pending;
+                if (emitted_pending >= kCpuChecksumPublishStride) {
+                    recovery_publish_checksum_valid_delta(emitted_pending);
+                    emitted_pending = 0ull;
                 }
             }
             return true;
@@ -2562,6 +2578,9 @@ static bool recovery_emit_task_candidates_cpu(RecoveryGpuDirectContext& ctx, con
     };
 
     const bool ok = dfs(0u);
+    if (ok && emitted_pending != 0ull) {
+        recovery_publish_checksum_valid_delta(emitted_pending);
+    }
     if (recovery_partition_is_log_owner() && (tested & ((1ull << 20) - 1ull)) == 0ull) {
         printf("                                                                        \r");
         fflush(stdout);
@@ -2598,6 +2617,7 @@ static bool recovery_emit_task_candidates_gpu(RecoveryGpuDirectContext& ctx, con
                 return false;
             }
             emitted = 1;
+            recovery_publish_checksum_valid_delta(1ull);
         }
         return true;
     }
@@ -2762,6 +2782,7 @@ static bool recovery_emit_task_candidates_gpu(RecoveryGpuDirectContext& ctx, con
             }
 
             recovery_u64_add_saturating(emitted, static_cast<uint64_t>(found_total));
+            recovery_publish_checksum_valid_delta(static_cast<uint64_t>(found_total));
       /*      if ((tested & ((1ull << 20) - 1ull)) == 0ull) {
                 printf("[!] Recovery tested: %llu | checksum-valid: %llu\r",
                     static_cast<unsigned long long>(tested),
@@ -3051,6 +3072,7 @@ static bool recovery_emit_task_candidates_fused_gpu(RecoveryGpuDirectContext& ct
 
             recovery_u64_add_saturating(tested, range.count);
             recovery_u64_add_saturating(emitted, static_cast<uint64_t>(found_total));
+            recovery_publish_checksum_valid_delta(static_cast<uint64_t>(found_total));
             counterTotal += (range.count * static_cast<uint64_t>(Iterations.size()));
 
    /*         if ((tested & ((1ull << 20) - 1ull)) == 0ull) {
@@ -3406,7 +3428,6 @@ cudaError_t processCudaRecovery() {
         tested_total += tested;
         emitted_total += emitted;
         g_recovery_tested_total.fetch_add(tested, std::memory_order_relaxed);
-        g_recovery_emitted_total.fetch_add(emitted, std::memory_order_relaxed);
         if (recovery_log_master) {
             if (recovery_partition_active()) {
                 printf("[!] Recovery task done (%llu/%llu) [slot-local]: tested=%llu checksum-valid=%llu [!]\n",
@@ -3521,7 +3542,7 @@ int RunRecoveryApp(int argc, char** argv)
         fprintf(stderr, "[!] Error: no target families selected for -c [!]\n");
         return 1;
     }
-    PARAM_ECMULT_WINDOW_SIZE = 10;
+    PARAM_ECMULT_WINDOW_SIZE = 16;
 
     unsigned int requested_threads = set_thread ? BLOCK_THREADS : 0u;
     unsigned int requested_blocks = set_block ? BLOCK_NUMBER : 0u;
