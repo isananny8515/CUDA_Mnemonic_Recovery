@@ -267,6 +267,10 @@ thread_local uint16_t* p_pas_size = nullptr;
 thread_local int64_t* p_round = nullptr;
 thread_local uint64_t* p_seed = nullptr;
 thread_local unsigned long long* p_results_count = nullptr;
+thread_local size_t free_gpu_start = 0;
+thread_local size_t total_gpu_start = 0;
+thread_local size_t free_gpu_end = 0;
+thread_local size_t total_gpu_end = 0;
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -4131,9 +4135,10 @@ bool checkDevice() {
         BLOCK_THREADS = std::min<unsigned int>(256u, static_cast<unsigned int>(props.maxThreadsPerBlock));
     }
 
+    const size_t deriv_count = Derivations_list.empty() ? 1u : Derivations_list.size();
+    unsigned int blocks_per_sm = (deriv_count > 2u) ? 2u : 1u;
+
     if (BLOCK_NUMBER == 0u) {
-        const size_t deriv_count = Derivations_list.empty() ? 1u : Derivations_list.size();
-        unsigned int blocks_per_sm = (deriv_count > 2u) ? 2u : 1u;
 
         if (useBloom || useXor || useXorUn || useXorUc || useXorHc || useHashTarget) {
             blocks_per_sm = std::max<unsigned int>(blocks_per_sm, 2u);
@@ -4151,12 +4156,16 @@ bool checkDevice() {
     }
 
     workSize = static_cast<uint64_t>(BLOCK_NUMBER) * static_cast<uint64_t>(BLOCK_THREADS) * static_cast<uint64_t>(THREAD_STEPS);
+    fprintf(stderr, "[!] Auto-tuned recovery launch: %u blocks/SM (derivations: %zu)\n", blocks_per_sm, deriv_count);
+    fprintf(stderr, "[!] %s (%2d SMs | Blocks: %u | Threads: %u)\n", props.name, props.multiProcessorCount, BLOCK_NUMBER, BLOCK_THREADS);
     return true;
 }
 
 // mallocFounds: allocates founds.
 bool mallocFounds(uint32_t N) {
     cudaError_t cudaStatus;
+    size_t free0, total0, free1, total1;
+    cudaMemGetInfo(&free0, &total0);
     cudaStatus = cudaMalloc(&p_str, static_cast<size_t>(N) * 512u);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "[!] CUDA malloc for mnemonic strings failed [!]\n");
@@ -4325,6 +4334,8 @@ bool mallocFounds(uint32_t N) {
     }
 
     cudaDeviceSynchronize();
+    cudaMemGetInfo(&free1, &total1);   // Snapshot after allocations.
+    printf("[!] GPU %d founds memory allocated: %.2f MiB [!]\n", DEVICE_NR, (free0 - free1) / 1024.0 / 1024.0);
     return true;
 }
 
@@ -4348,6 +4359,7 @@ cudaError_t prepareCuda() {
     //printf("prec big gen %d bit, please wait\n", bits);
     windows = (256 / bits) + 1;
     window_size = (size_t{ 1 } << (bits - 1));
+    printf("[!] GPU %d: preparing cuda device... Please wait... \n", DEVICE_NR);
     if (secp256_host || secp_target_host) {
         cudaStatus = cudaMallocPitch(&_dev_precomp, &pitch, sizeof(secp256k1_ge_storage) * window_size, windows);
         if (cudaStatus != cudaSuccess) {
@@ -4376,6 +4388,7 @@ cudaError_t prepareCuda() {
             fprintf(stderr, "[!] Cuda prepare failed: cudaDeviceSynchronize returned error code %d after launching kernel 'computeTable'! [!]\n", cudaStatus);
             goto Error;
         }
+        printf("[!] GPU %d: preparing finished \n", DEVICE_NR);
     Error:
         cudaFree(_dev_gej_temp);
         cudaFree(_dev_z_ratio);
@@ -4527,6 +4540,8 @@ cudaError_t prepareCuda() {
             DEVICE_NR, hashTargetLenBytes, hashTargetHex.c_str());
     }
     printf("[!] GPU %d: all preparation finished.\n", DEVICE_NR);
+    cudaMemGetInfo(&free_gpu_end, &total_gpu_end);
+    printf("[!] GPU %d total memory used: %.2f MiB [!]\n", DEVICE_NR, (free_gpu_start - free_gpu_end) / 1024.0 / 1024.0);
     printf("-----------------------------------------------------------------\n");
     printf("[!] Loaded bloom filters on GPU %d: %lld\n", DEVICE_NR, gpu_bloom_loaded ? (long long)bloomFiles.size() : 0ll);
     printf("[!] Loaded uncompressed xor filters on GPU %d: %lld\n", DEVICE_NR, gpu_xor_un_loaded ? (long long)xorFilesUn.size() : 0ll);
@@ -4651,6 +4666,7 @@ static bool initialize_gpu_contexts(const unsigned int requested_threads, const 
             continue;
         }
 
+        cudaMemGetInfo(&free_gpu_start, &total_gpu_start);
         setFoundSize << <1, 1 >> > (MAX_FOUNDS);
         cudaError_t st = cudaDeviceSynchronize();
         if (st != cudaSuccess) {
