@@ -65,7 +65,7 @@ void printHelp() {
         << "  CUDA_Mnemonic_Recovery -recovery -i templates.txt -d derivations.txt [options]\n\n"
         << "Recovery sources:\n"
         << "  -recovery \"...\"     Add one recovery template inline. Repeatable.\n"
-        << "  -recovery -i FILE    Load recovery templates from file. Repeatable.\n"
+        << "  -recovery -i FILE    Load recovery templates from file, processed line by line. Repeatable.\n"
         << "  -wordlist FILE       Use an external 2048-word BIP39 wordlist override.\n"
         << "  -d FILE              Derivation file. Required.\n\n"
         << "Target selection:\n"

@@ -22,6 +22,7 @@
 #include <set>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <shared_mutex>
 #include <queue>
 #include "cuda/Kernel.cuh"
@@ -210,6 +211,16 @@ struct RecoveryPreparedTask {
     std::string normalized_phrase;
     size_t added_stars = 0;
     std::vector<std::pair<std::string, std::string>> replacements;
+};
+
+struct RecoverySourceStats {
+    std::string label;
+    bool is_file = false;
+    uint64_t processed = 0ull;
+    uint64_t skipped = 0ull;
+    uint64_t tested = 0ull;
+    uint64_t emitted = 0ull;
+    uint64_t found = 0ull;
 };
 
 bool RECOVERY_MODE = false;
@@ -3252,48 +3263,6 @@ static bool recovery_emit_task_candidates(RecoveryGpuDirectContext& ctx, const R
     return true;
 }
 
-// recovery_expand_templates: recovery mode helper that expands templates.
-static bool recovery_expand_templates(std::vector<RecoveryTemplateInput>& out, std::string& err) {
-    out.clear();
-    for (const RecoveryQueueEntry& entry : recoveryQueue) {
-        if (entry.type == RecoveryQueueEntryType::Phrase) {
-            const std::string phrase = recovery_trim_spaces_copy(entry.value);
-            if (!phrase.empty()) {
-                RecoveryTemplateInput t;
-                t.source = "<cmd>";
-                t.line_no = 0;
-                t.phrase = phrase;
-                out.emplace_back(std::move(t));
-            }
-            continue;
-        }
-
-        std::ifstream fin(entry.value.c_str(), std::ios::binary);
-        tune_ifstream_buffer(fin);
-        if (!fin) {
-            err = "failed to open recovery file: " + entry.value;
-            return false;
-        }
-        std::string line;
-        size_t line_no = 0;
-        while (read_trimmed_line(fin, line, 4096)) {
-            ++line_no;
-            line = recovery_trim_spaces_copy(line);
-            if (line.empty()) continue;
-            RecoveryTemplateInput t;
-            t.source = entry.value;
-            t.line_no = line_no;
-            t.phrase = line;
-            out.emplace_back(std::move(t));
-        }
-    }
-    if (out.empty()) {
-        err = "recovery queue is empty";
-        return false;
-    }
-    return true;
-}
-
 // recovery_load_wordlists: recovery mode helper that loads wordlists.
 static bool recovery_load_wordlists(std::vector<RecoveryWordlist>& out, std::string& err) {
     out.clear();
@@ -3343,27 +3312,335 @@ static bool recovery_load_wordlists(std::vector<RecoveryWordlist>& out, std::str
     return !out.empty();
 }
 
+static std::string recovery_format_input_ref(const RecoveryTemplateInput& in) {
+    if (in.line_no > 0u) {
+        return in.source + ":" + std::to_string(in.line_no);
+    }
+    return in.source;
+}
+
+static void recovery_log_prepared_task(const RecoveryPreparedTask& task, const bool recovery_log_master) {
+    if (!recovery_log_master) {
+        return;
+    }
+
+    if (task.added_stars > 0) {
+        printf("[!] Recovery normalized word count by appending %llu wildcard(s). [!]\n",
+            static_cast<unsigned long long>(task.added_stars));
+    }
+    for (const auto& repl : task.replacements) {
+        printf("[!] Recovery replace: '%s' -> '%s' [!]\n", repl.first.c_str(), repl.second.c_str());
+    }
+
+    const size_t n_words = task.ids.size();
+    const size_t missing = task.missing_positions.size();
+    const long double combos = std::pow(2048.0L, static_cast<long double>(missing));
+    const long double expected_valid = combos / std::pow(2.0L, static_cast<long double>(n_words / 3u));
+
+    printf("[!] Recovery task: words=%llu missing=%llu dict=%s [!]\n",
+        static_cast<unsigned long long>(n_words),
+        static_cast<unsigned long long>(missing),
+        task.wordlist->name.c_str());
+    printf("[!] Phrase: %s\n", task.normalized_phrase.c_str());
+    printf("[!] Candidates to test: ~%s | expected checksum-valid: ~%s\n",
+        recovery_format_scientific(combos).c_str(),
+        recovery_format_scientific(expected_valid).c_str());
+}
+
+static bool recovery_process_prepared_task(
+    RecoveryGpuDirectContext& recovery_ctx,
+    const RecoveryPreparedTask& task,
+    const bool use_fused_path,
+    uint64_t& tested,
+    uint64_t& emitted,
+    std::string& err) {
+
+    tested = 0ull;
+    emitted = 0ull;
+    err.clear();
+
+    if (!recovery_direct_select_wordlist(recovery_ctx, task, err)) {
+        return false;
+    }
+    if (!recovery_emit_task_candidates(recovery_ctx, task, use_fused_path, tested, emitted, err)) {
+        if (err.empty()) {
+            err = "recovery task generation failed";
+        }
+        return false;
+    }
+    if (!recovery_direct_finalize(recovery_ctx, err)) {
+        if (err.empty()) {
+            err = "recovery finalization failed";
+        }
+        return false;
+    }
+    return true;
+}
+
+template <typename Runner>
+static bool recovery_process_streaming_input(
+    const RecoveryTemplateInput& input,
+    const std::vector<RecoveryWordlist>& wordlists,
+    const bool recovery_log_master,
+    Runner&& runner,
+    RecoverySourceStats& source_stats,
+    uint64_t& tested_total,
+    uint64_t& emitted_total,
+    uint64_t& processed_total,
+    uint64_t& skipped_total,
+    std::string& err) {
+
+    RecoveryPreparedTask task;
+    std::string prep_err;
+    if (!recovery_prepare_task(input, wordlists, task, prep_err)) {
+        fprintf(stderr, "[!] Recovery skip: %s -> %s [!]\n",
+            recovery_format_input_ref(input).c_str(),
+            prep_err.c_str());
+        ++source_stats.skipped;
+        ++skipped_total;
+        return true;
+    }
+
+    recovery_log_prepared_task(task, recovery_log_master);
+
+    const uint32_t found_before = Founds.load(std::memory_order_relaxed);
+    uint64_t tested = 0ull;
+    uint64_t emitted = 0ull;
+    std::string task_err;
+    if (!runner(task, tested, emitted, task_err)) {
+        err = task_err.empty() ? "recovery task execution failed" : task_err;
+        return false;
+    }
+    const uint32_t found_after = Founds.load(std::memory_order_relaxed);
+
+    ++source_stats.processed;
+    source_stats.tested += tested;
+    source_stats.emitted += emitted;
+    source_stats.found += static_cast<uint64_t>(found_after - found_before);
+
+    ++processed_total;
+    tested_total += tested;
+    emitted_total += emitted;
+    g_recovery_tested_total.fetch_add(tested, std::memory_order_relaxed);
+
+    if (recovery_log_master) {
+        printf("[!] Recovery task done: %s | tested=%llu checksum-valid=%llu [!]\n",
+            recovery_format_input_ref(input).c_str(),
+            static_cast<unsigned long long>(tested),
+            static_cast<unsigned long long>(emitted));
+    }
+
+    return true;
+}
+
+struct RecoveryStreamingMultiGpuSession {
+    std::mutex mutex;
+    std::condition_variable cv_task;
+    std::condition_variable cv_done;
+    std::condition_variable cv_startup;
+    std::vector<std::thread> workers;
+    std::vector<cudaError_t> startup_statuses;
+    std::vector<std::string> startup_errors;
+    std::vector<cudaError_t> statuses;
+    std::vector<std::string> errors;
+    std::vector<uint64_t> tested;
+    std::vector<uint64_t> emitted;
+    const RecoveryPreparedTask* current_task = nullptr;
+    bool current_use_fused_path = false;
+    bool stop = false;
+    uint64_t task_serial = 0ull;
+    size_t startup_count = 0u;
+    size_t completed = 0u;
+};
+
+static bool recovery_streaming_multi_gpu_session_start(
+    RecoveryStreamingMultiGpuSession& session,
+    std::string& err) {
+
+    const size_t gpu_count = g_gpu_contexts.size();
+    if (gpu_count == 0u) {
+        err = "no active GPU contexts available";
+        return false;
+    }
+
+    session.startup_statuses.assign(gpu_count, cudaSuccess);
+    session.startup_errors.assign(gpu_count, std::string{});
+    session.statuses.assign(gpu_count, cudaSuccess);
+    session.errors.assign(gpu_count, std::string{});
+    session.tested.assign(gpu_count, 0ull);
+    session.emitted.assign(gpu_count, 0ull);
+    session.workers.reserve(gpu_count);
+
+    for (size_t gpu_idx = 0; gpu_idx < gpu_count; ++gpu_idx) {
+        session.workers.emplace_back([&, gpu_idx, gpu_count]() {
+            RecoveryGpuDirectContext recovery_ctx;
+            std::string startup_err;
+            cudaError_t startup_st = cudaSuccess;
+
+            {
+                std::lock_guard<std::mutex> lock(g_cuda_context_api_mutex);
+                if (!activate_gpu_context(g_gpu_contexts[gpu_idx])) {
+                    startup_st = cudaErrorInvalidDevice;
+                    startup_err = "failed to activate GPU context";
+                }
+                else if (!recovery_direct_init(recovery_ctx, startup_err)) {
+                    startup_st = cudaErrorUnknown;
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(session.mutex);
+                session.startup_statuses[gpu_idx] = startup_st;
+                session.startup_errors[gpu_idx] = startup_err;
+                ++session.startup_count;
+            }
+            session.cv_startup.notify_one();
+
+            if (startup_st != cudaSuccess) {
+                return;
+            }
+
+            uint64_t seen_serial = 0ull;
+            const RecoveryMultiGpuPartition previous_partition = g_recovery_multi_gpu_partition;
+            for (;;) {
+                const RecoveryPreparedTask* task = nullptr;
+                bool use_fused_path = false;
+
+                {
+                    std::unique_lock<std::mutex> lock(session.mutex);
+                    session.cv_task.wait(lock, [&]() {
+                        return session.stop || session.task_serial != seen_serial;
+                    });
+                    if (session.stop) {
+                        break;
+                    }
+                    task = session.current_task;
+                    use_fused_path = session.current_use_fused_path;
+                    seen_serial = session.task_serial;
+                }
+
+                g_recovery_multi_gpu_partition.enabled = true;
+                g_recovery_multi_gpu_partition.index = gpu_idx;
+                g_recovery_multi_gpu_partition.count = gpu_count;
+
+                uint64_t tested = 0ull;
+                uint64_t emitted = 0ull;
+                std::string task_err;
+                cudaError_t task_st = cudaSuccess;
+                if (task == nullptr || !recovery_process_prepared_task(recovery_ctx, *task, use_fused_path, tested, emitted, task_err)) {
+                    task_st = cudaErrorUnknown;
+                    if (task_err.empty()) {
+                        task_err = "recovery task execution failed";
+                    }
+                }
+
+                {
+                    std::lock_guard<std::mutex> lock(session.mutex);
+                    session.statuses[gpu_idx] = task_st;
+                    session.errors[gpu_idx] = task_err;
+                    session.tested[gpu_idx] = tested;
+                    session.emitted[gpu_idx] = emitted;
+                    ++session.completed;
+                }
+                session.cv_done.notify_one();
+            }
+
+            g_recovery_multi_gpu_partition = previous_partition;
+            recovery_direct_release(recovery_ctx);
+        });
+    }
+
+    {
+        std::unique_lock<std::mutex> lock(session.mutex);
+        session.cv_startup.wait(lock, [&]() {
+            return session.startup_count == gpu_count;
+        });
+    }
+
+    for (size_t gpu_idx = 0; gpu_idx < gpu_count; ++gpu_idx) {
+        if (session.startup_statuses[gpu_idx] != cudaSuccess) {
+            err = session.startup_errors[gpu_idx].empty()
+                ? ("failed to initialize GPU " + std::to_string(g_gpu_contexts[gpu_idx].device_id))
+                : ("GPU " + std::to_string(g_gpu_contexts[gpu_idx].device_id) + ": " + session.startup_errors[gpu_idx]);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void recovery_streaming_multi_gpu_session_stop(RecoveryStreamingMultiGpuSession& session) {
+    {
+        std::lock_guard<std::mutex> lock(session.mutex);
+        session.stop = true;
+    }
+    session.cv_task.notify_all();
+    for (std::thread& worker : session.workers) {
+        if (worker.joinable()) {
+            worker.join();
+        }
+    }
+
+    if (!g_gpu_contexts.empty()) {
+        std::lock_guard<std::mutex> lock(g_cuda_context_api_mutex);
+        activate_gpu_context(g_gpu_contexts.front());
+    }
+}
+
+static bool recovery_streaming_multi_gpu_run_task(
+    RecoveryStreamingMultiGpuSession& session,
+    const RecoveryPreparedTask& task,
+    const bool use_fused_path,
+    uint64_t& tested,
+    uint64_t& emitted,
+    std::string& err) {
+
+    tested = 0ull;
+    emitted = 0ull;
+    err.clear();
+
+    {
+        std::lock_guard<std::mutex> lock(session.mutex);
+        std::fill(session.statuses.begin(), session.statuses.end(), cudaSuccess);
+        std::fill(session.errors.begin(), session.errors.end(), std::string{});
+        std::fill(session.tested.begin(), session.tested.end(), 0ull);
+        std::fill(session.emitted.begin(), session.emitted.end(), 0ull);
+        session.current_task = &task;
+        session.current_use_fused_path = use_fused_path;
+        session.completed = 0u;
+        ++session.task_serial;
+    }
+    session.cv_task.notify_all();
+
+    {
+        std::unique_lock<std::mutex> lock(session.mutex);
+        session.cv_done.wait(lock, [&]() {
+            return session.completed == session.workers.size();
+        });
+    }
+
+    for (size_t gpu_idx = 0; gpu_idx < session.workers.size(); ++gpu_idx) {
+        if (session.statuses[gpu_idx] != cudaSuccess) {
+            err = session.errors[gpu_idx].empty()
+                ? ("GPU " + std::to_string(g_gpu_contexts[gpu_idx].device_id) + ": recovery task failed")
+                : ("GPU " + std::to_string(g_gpu_contexts[gpu_idx].device_id) + ": " + session.errors[gpu_idx]);
+            return false;
+        }
+        tested += session.tested[gpu_idx];
+        emitted += session.emitted[gpu_idx];
+    }
+
+    return true;
+}
+
 // processCudaRecovery: runs the CUDA workflow for recovery.
 cudaError_t processCudaRecovery() {
-    if (is_multi_gpu_active() && !g_disable_multi_gpu_dispatch) {
-        return dispatch_recovery_mode_multi_gpu(__func__, []() -> cudaError_t {
-            return processCudaRecovery();
-            });
-    }
-
     g_recovery_run_stats = RecoveryRunStats{};
-    if (!recovery_partition_active()) {
-        g_recovery_tested_total.store(0ull, std::memory_order_relaxed);
-        g_recovery_emitted_total.store(0ull, std::memory_order_relaxed);
-    }
+    g_recovery_tested_total.store(0ull, std::memory_order_relaxed);
+    g_recovery_emitted_total.store(0ull, std::memory_order_relaxed);
 
-    const bool recovery_log_master = recovery_partition_is_log_owner();
-    if (recovery_partition_active()) {
-        printf("[!] Recovery multi-GPU session: active device %d [%llu/%llu] [!]\n",
-            DEVICE_NR,
-            static_cast<unsigned long long>(g_recovery_multi_gpu_partition.index + 1u),
-            static_cast<unsigned long long>(g_recovery_multi_gpu_partition.count));
-    }
+    const bool use_multi_gpu_session = is_multi_gpu_active() && !g_disable_multi_gpu_dispatch;
+    const bool recovery_log_master = true;
 
     std::vector<RecoveryWordlist> wordlists;
     std::string err;
@@ -3371,145 +3648,136 @@ cudaError_t processCudaRecovery() {
         fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
         return cudaErrorInvalidValue;
     }
-
-    std::vector<RecoveryTemplateInput> templates;
-    if (!recovery_expand_templates(templates, err)) {
-        fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
-        return cudaErrorInvalidValue;
-    }
-
-    std::vector<RecoveryPreparedTask> tasks;
-    tasks.reserve(templates.size());
     const bool use_fused_path = recovery_can_use_fused_path();
 
-    if (recovery_log_master) {
-        printf("[!] Recovery templates loaded: %llu [!]\n", static_cast<unsigned long long>(templates.size()));
+    RecoveryGpuDirectContext recovery_ctx;
+    RecoveryStreamingMultiGpuSession multi_session;
+    cudaError_t st = cudaSuccess;
+    uint64_t tested_total = 0ull;
+    uint64_t emitted_total = 0ull;
+    uint64_t processed_total = 0ull;
+    uint64_t skipped_total = 0ull;
+
+    auto stop_multi_session = [&]() {
+        if (!multi_session.workers.empty()) {
+            recovery_streaming_multi_gpu_session_stop(multi_session);
+        }
+    };
+
+    if (use_multi_gpu_session) {
+        if (!recovery_streaming_multi_gpu_session_start(multi_session, err)) {
+            stop_multi_session();
+            fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
+            return cudaErrorUnknown;
+        }
     }
-    for (const RecoveryTemplateInput& t : templates) {
-        RecoveryPreparedTask task;
-        std::string prep_err;
-        if (!recovery_prepare_task(t, wordlists, task, prep_err)) {
-            if (t.line_no > 0) {
-                fprintf(stderr, "[!] Recovery skip: %s:%llu -> %s [!]\n",
-                    t.source.c_str(),
-                    static_cast<unsigned long long>(t.line_no),
-                    prep_err.c_str());
-            }
-            else {
-                fprintf(stderr, "[!] Recovery skip: %s -> %s [!]\n",
-                    t.source.c_str(),
-                    prep_err.c_str());
+    else {
+        if (!recovery_direct_init(recovery_ctx, err)) {
+            fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
+            return cudaErrorUnknown;
+        }
+    }
+
+    auto run_task = [&](const RecoveryPreparedTask& task, uint64_t& tested, uint64_t& emitted, std::string& task_err) -> bool {
+        if (use_multi_gpu_session) {
+            return recovery_streaming_multi_gpu_run_task(multi_session, task, use_fused_path, tested, emitted, task_err);
+        }
+        return recovery_process_prepared_task(recovery_ctx, task, use_fused_path, tested, emitted, task_err);
+    };
+
+    for (const RecoveryQueueEntry& entry : recoveryQueue) {
+        RecoverySourceStats source_stats;
+        source_stats.label = (entry.type == RecoveryQueueEntryType::File) ? entry.value : "<cmd>";
+        source_stats.is_file = (entry.type == RecoveryQueueEntryType::File);
+
+        if (source_stats.is_file) {
+            printf("[!] Recovery source: %s [!]\n", source_stats.label.c_str());
+        }
+
+        if (entry.type == RecoveryQueueEntryType::Phrase) {
+            const std::string phrase = recovery_trim_spaces_copy(entry.value);
+            if (!phrase.empty()) {
+                RecoveryTemplateInput input;
+                input.source = "<cmd>";
+                input.line_no = 0u;
+                input.phrase = phrase;
+                if (!recovery_process_streaming_input(input, wordlists, recovery_log_master, run_task, source_stats,
+                    tested_total, emitted_total, processed_total, skipped_total, err)) {
+                    fprintf(stderr, "[!] Recovery generator error: %s [!]\n", err.c_str());
+                    st = cudaErrorUnknown;
+                    break;
+                }
             }
             continue;
         }
 
-        if (recovery_log_master && task.added_stars > 0) {
-            printf("[!] Recovery normalized word count by appending %llu wildcard(s). [!]\n",
-                static_cast<unsigned long long>(task.added_stars));
-        }
-        for (const auto& repl : task.replacements) {
-            if (!recovery_log_master) {
-                break;
-            }
-            printf("[!] Recovery replace: '%s' -> '%s' [!]\n", repl.first.c_str(), repl.second.c_str());
-        }
-
-        const size_t n_words = task.ids.size();
-        const size_t missing = task.missing_positions.size();
-        const long double combos = std::pow(2048.0L, static_cast<long double>(missing));
-        const long double expected_valid = combos / std::pow(2.0L, static_cast<long double>(n_words / 3u));
-
-        if (recovery_log_master) {
-            printf("[!] Recovery task: words=%llu missing=%llu dict=%s [!]\n",
-                static_cast<unsigned long long>(n_words),
-                static_cast<unsigned long long>(missing),
-                task.wordlist->name.c_str());
-            printf("[!] Phrase: %s\n", task.normalized_phrase.c_str());
-            printf("[!] Candidates to test: ~%s | expected checksum-valid: ~%s\n",
-                recovery_format_scientific(combos).c_str(),
-                recovery_format_scientific(expected_valid).c_str());
-        }
-
-        tasks.emplace_back(std::move(task));
-    }
-
-    if (tasks.empty()) {
-        fprintf(stderr, "[!] Recovery error: no valid tasks to process [!]\n");
-        return cudaErrorInvalidValue;
-    }
-
-    RecoveryGpuDirectContext recovery_ctx;
-    if (!recovery_direct_init(recovery_ctx, err)) {
-        fprintf(stderr, "[!] Recovery error: %s [!]\n", err.c_str());
-        return cudaErrorUnknown;
-    }
-    cudaError_t st = cudaSuccess;
-    uint64_t tested_total = 0;
-    uint64_t emitted_total = 0;
-
-    for (size_t i = 0; i < tasks.size(); ++i) {
-        const RecoveryPreparedTask& task = tasks[i];
-        uint64_t tested = 0;
-        uint64_t emitted = 0;
-        std::string task_err;
-        if (!recovery_direct_select_wordlist(recovery_ctx, task, task_err)) {
-            fprintf(stderr, "[!] Recovery dictionary error: %s [!]\n", task_err.c_str());
-            st = cudaErrorUnknown;
+        std::ifstream fin(entry.value.c_str(), std::ios::binary);
+        tune_ifstream_buffer(fin);
+        if (!fin) {
+            fprintf(stderr, "[!] Recovery error: failed to open recovery file: %s [!]\n", entry.value.c_str());
+            st = cudaErrorInvalidValue;
             break;
         }
-        if (!recovery_emit_task_candidates(recovery_ctx, task, use_fused_path, tested, emitted, task_err)) {
-            if (task_err.empty()) {
-                task_err = "recovery task generation failed";
+
+        std::string line;
+        size_t line_no = 0u;
+        while (read_trimmed_line(fin, line, 4096u)) {
+            ++line_no;
+            line = recovery_trim_spaces_copy(line);
+            if (line.empty()) {
+                continue;
             }
-            fprintf(stderr, "[!] Recovery generator error: %s [!]\n", task_err.c_str());
-            st = cudaErrorUnknown;
-            break;
-        }
-        if (!use_fused_path) {
-            if (!recovery_direct_flush(recovery_ctx, task_err)) {
-                if (task_err.empty()) {
-                    task_err = "recovery flush failed";
-                }
-                fprintf(stderr, "[!] Recovery generator error: %s [!]\n", task_err.c_str());
+
+            RecoveryTemplateInput input;
+            input.source = entry.value;
+            input.line_no = line_no;
+            input.phrase = std::move(line);
+            if (!recovery_process_streaming_input(input, wordlists, recovery_log_master, run_task, source_stats,
+                tested_total, emitted_total, processed_total, skipped_total, err)) {
+                fprintf(stderr, "[!] Recovery generator error: %s [!]\n", err.c_str());
                 st = cudaErrorUnknown;
                 break;
             }
         }
 
-        tested_total += tested;
-        emitted_total += emitted;
-        g_recovery_tested_total.fetch_add(tested, std::memory_order_relaxed);
-        if (recovery_log_master) {
-            if (recovery_partition_active()) {
-                printf("[!] Recovery task done (%llu/%llu) [device-local]: tested=%llu checksum-valid=%llu [!]\n",
-                    static_cast<unsigned long long>(i + 1u),
-                    static_cast<unsigned long long>(tasks.size()),
-                    static_cast<unsigned long long>(tested),
-                    static_cast<unsigned long long>(emitted));
-            }
-            else {
-                printf("[!] Recovery task done (%llu/%llu): tested=%llu checksum-valid=%llu [!]\n",
-                    static_cast<unsigned long long>(i + 1u),
-                    static_cast<unsigned long long>(tasks.size()),
-                    static_cast<unsigned long long>(tested),
-                    static_cast<unsigned long long>(emitted));
-            }
+        if (source_stats.is_file) {
+            printf("[!] Recovery source done: %s | processed=%llu skipped=%llu tested=%llu checksum-valid=%llu found=%llu [!]\n",
+                source_stats.label.c_str(),
+                static_cast<unsigned long long>(source_stats.processed),
+                static_cast<unsigned long long>(source_stats.skipped),
+                static_cast<unsigned long long>(source_stats.tested),
+                static_cast<unsigned long long>(source_stats.emitted),
+                static_cast<unsigned long long>(source_stats.found));
+        }
+
+        if (st != cudaSuccess) {
+            break;
         }
     }
 
-    if (st == cudaSuccess && !use_fused_path) {
-        if (!recovery_direct_finalize(recovery_ctx, err)) {
-            fprintf(stderr, "[!] Recovery generator error: %s [!]\n", err.c_str());
-            st = cudaErrorUnknown;
-        }
+    if (!use_multi_gpu_session) {
+        recovery_direct_release(recovery_ctx);
+    }
+    stop_multi_session();
+
+    if (st == cudaSuccess && processed_total == 0ull) {
+        fprintf(stderr, "[!] Recovery error: no valid tasks to process [!]\n");
+        st = cudaErrorInvalidValue;
     }
 
-    recovery_direct_release(recovery_ctx);
-
-    if (recovery_log_master && !recovery_partition_active()) {
-        printf("[!] Recovery summary: tested=%llu checksum-valid=%llu [!]\n",
+    if (st == cudaSuccess) {
+        printf("[!] Recovery summary: processed=%llu skipped=%llu tested=%llu checksum-valid=%llu [!]\n",
+            static_cast<unsigned long long>(processed_total),
+            static_cast<unsigned long long>(skipped_total),
             static_cast<unsigned long long>(tested_total),
             static_cast<unsigned long long>(emitted_total));
+
+        if (use_multi_gpu_session) {
+            for (size_t gpu_idx = 0; gpu_idx < g_gpu_contexts.size(); ++gpu_idx) {
+                printf("[!] Recovery device %d participated in the streaming session [!]\n",
+                    g_gpu_contexts[gpu_idx].device_id);
+            }
+        }
     }
 
     g_recovery_run_stats.tested_total = tested_total;

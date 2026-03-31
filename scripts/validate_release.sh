@@ -21,6 +21,8 @@ hash_solana_d2="89dfcdfe8986448bf0ca1f5bc1720de5ad66104c"
 hash_d4="4fd01a8da7097495668c9ee9499084bc5680199a"
 
 templates_file="examples/validation/templates-file.txt"
+templates_stream_a="examples/validation/templates-stream-a.txt"
+templates_stream_b="examples/validation/templates-stream-b.txt"
 template_typo="examples/validation/template-typo.txt"
 derivations_default="examples/derivations/default.txt"
 derivations_secp="examples/validation/derivations-secp.txt"
@@ -111,6 +113,29 @@ pass_output="$(run_case "passphrase exact hash" \
   -silent)"
 require_pattern "passphrase exact hash" "$pass_output" 'Found:[[:space:]]+1'
 echo "[ok] passphrase exact hash"
+
+mixed_output="$(run_case "mixed streaming sources" \
+  -device "$device" \
+  -recovery "$phrase_one_missing" \
+  -recovery -i "$templates_stream_a" \
+  -recovery -i "$templates_stream_b" \
+  -d "$derivations_default" \
+  -c c \
+  -hash "$hash_compressed" \
+  -silent)"
+require_pattern "mixed streaming sources" "$mixed_output" 'Recovery source done: examples/validation/templates-stream-a\.txt \| processed=1 skipped=0 tested=2048 checksum-valid=128 found=1'
+require_pattern "mixed streaming sources" "$mixed_output" 'Recovery source done: examples/validation/templates-stream-b\.txt \| processed=1 skipped=1 tested=2048 checksum-valid=128 found=1'
+require_pattern "mixed streaming sources" "$mixed_output" 'Recovery summary: processed=3 skipped=1 tested=6144 checksum-valid=384'
+require_pattern "mixed streaming sources" "$mixed_output" 'Found:[[:space:]]+3'
+mixed_cmd_index="$(awk 'index($0,"Recovery task done: <cmd> | tested=2048 checksum-valid=128"){print NR; exit}' <<<"$mixed_output")"
+mixed_a_index="$(awk 'index($0,"Recovery source done: examples/validation/templates-stream-a.txt | processed=1 skipped=0 tested=2048 checksum-valid=128 found=1"){print NR; exit}' <<<"$mixed_output")"
+mixed_b_index="$(awk 'index($0,"Recovery source done: examples/validation/templates-stream-b.txt | processed=1 skipped=1 tested=2048 checksum-valid=128 found=1"){print NR; exit}' <<<"$mixed_output")"
+if [[ -z "$mixed_cmd_index" || -z "$mixed_a_index" || -z "$mixed_b_index" || "$mixed_cmd_index" -ge "$mixed_a_index" || "$mixed_a_index" -ge "$mixed_b_index" ]]; then
+  echo "Mixed-source streaming order did not stay aligned with the recovery queue." >&2
+  printf '%s\n' "$mixed_output" >&2
+  exit 1
+fi
+echo "[ok] mixed streaming sources"
 
 save_file="$validation_out_dir/save-output.txt"
 rm -f "$save_file"

@@ -36,6 +36,8 @@ Both scripts accept an explicit executable path if you want to validate a packag
 
 Validation fixtures live in [`examples/validation`](./examples/validation).
 
+File-based recovery inputs are validated in streaming mode. The release path no longer preloads the entire templates file into RAM before processing begins.
+
 ## Validation Matrix
 
 | Area | Coverage | Mode |
@@ -43,6 +45,7 @@ Validation fixtures live in [`examples/validation`](./examples/validation).
 | Public help | `-help` includes public flags and experimental note for `-d_type 4` | automated |
 | Inline exact-hash recovery | one-missing-word recovery against the bundled BTC-style fixture | automated |
 | File-based recovery | recovery from `examples/validation/templates-file.txt` | automated |
+| Streaming mixed sources | inline phrase + file + file, with ordered processing and per-file skip/processed summaries | automated |
 | Typo correction | `acces -> access` correction and successful hit | automated |
 | `-save` behavior | output file is created and contains address-oriented `Found` lines | automated |
 | Passphrase path | exact-hash recovery with `-pass TREZOR` | automated |
@@ -95,6 +98,8 @@ CMR_DEVICE=2 CMR_MULTI_DEVICE=0,2 ./scripts/validate_release.sh
 
 Validation fixtures лежат в [`examples/validation`](./examples/validation).
 
+Файловый recovery-path валидируется именно в streaming-режиме. Публичная release-логика больше не предзагружает весь templates-файл в ОЗУ до начала обработки.
+
 ## Матрица Проверок
 
 | Зона | Покрытие | Режим |
@@ -102,6 +107,7 @@ Validation fixtures лежат в [`examples/validation`](./examples/validation)
 | Публичное help-меню | `-help` содержит публичные флаги и experimental note для `-d_type 4` | automated |
 | Inline exact-hash recovery | recovery с одним пропущенным словом на bundled BTC-style fixture | automated |
 | Recovery из файла | recovery через `examples/validation/templates-file.txt` | automated |
+| Streaming mixed sources | inline phrase + file + file, с сохранением порядка обработки и per-file skip/processed summary | automated |
 | Исправление опечатки | коррекция `acces -> access` и успешный hit | automated |
 | Поведение `-save` | создаётся output-файл и в нём лежат address-oriented `Found` строки | automated |
 | Passphrase path | exact-hash recovery с `-pass TREZOR` | automated |

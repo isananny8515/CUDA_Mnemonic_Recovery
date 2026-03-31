@@ -31,6 +31,8 @@ $hashSolanaD2 = "89dfcdfe8986448bf0ca1f5bc1720de5ad66104c"
 $hashD4 = "4fd01a8da7097495668c9ee9499084bc5680199a"
 
 $templatesFile = "examples/validation/templates-file.txt"
+$templatesStreamA = "examples/validation/templates-stream-a.txt"
+$templatesStreamB = "examples/validation/templates-stream-b.txt"
 $templateTypo = "examples/validation/template-typo.txt"
 $derivationsDefault = "examples/derivations/default.txt"
 $derivationsSecp = "examples/validation/derivations-secp.txt"
@@ -124,6 +126,29 @@ try {
         "-hash", $hashPass,
         "-silent"
     ) -Patterns @("Found:\s+1")
+
+    $mixedOutput = Invoke-Case -Name "mixed streaming sources" -ArgumentList @(
+        "-device", $Device,
+        "-recovery", $phraseOneMissing,
+        "-recovery", "-i", $templatesStreamA,
+        "-recovery", "-i", $templatesStreamB,
+        "-d", $derivationsDefault,
+        "-c", "c",
+        "-hash", $hashCompressed,
+        "-silent"
+    ) -Patterns @(
+        "Recovery source done: examples/validation/templates-stream-a\.txt \| processed=1 skipped=0 tested=2048 checksum-valid=128 found=1",
+        "Recovery source done: examples/validation/templates-stream-b\.txt \| processed=1 skipped=1 tested=2048 checksum-valid=128 found=1",
+        "Recovery summary: processed=3 skipped=1 tested=6144 checksum-valid=384",
+        "Found:\s+3"
+    )
+    $mixedCmdIndex = $mixedOutput.IndexOf("Recovery task done: <cmd> | tested=2048 checksum-valid=128")
+    $mixedAIndex = $mixedOutput.IndexOf("Recovery source done: examples/validation/templates-stream-a.txt | processed=1 skipped=0 tested=2048 checksum-valid=128 found=1")
+    $mixedBIndex = $mixedOutput.IndexOf("Recovery source done: examples/validation/templates-stream-b.txt | processed=1 skipped=1 tested=2048 checksum-valid=128 found=1")
+    if ($mixedCmdIndex -lt 0 -or $mixedAIndex -lt 0 -or $mixedBIndex -lt 0 -or -not ($mixedCmdIndex -lt $mixedAIndex -and $mixedAIndex -lt $mixedBIndex)) {
+        throw "Mixed-source streaming order did not stay aligned with the recovery queue.`n$mixedOutput"
+    }
+    Write-Host "[ok] mixed streaming sources" -ForegroundColor Green
 
     $saveFile = Join-Path $ValidationOutDir "save-output.txt"
     if (Test-Path $saveFile) { Remove-Item $saveFile -Force }

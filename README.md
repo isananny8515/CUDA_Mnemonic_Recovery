@@ -69,6 +69,7 @@ It is built for practical recovery work: real wildcard templates, real derivatio
 - Use embedded BIP39 wordlists or force an external `-wordlist FILE`.
 - Auto-pick the matching BIP39 language wordlist and correct common word-entry typos when the intended word is clear.
 - Feed templates inline or from files.
+- Process file-based recovery inputs in true streaming mode, one line at a time, without preloading the whole template file into RAM.
 - Check candidates against exact `-hash`, Bloom filters, XOR filters, and optional CPU-side verification.
 - Build XOR filters with [XorFilter](https://github.com/XopMC/XorFilter) and plug them straight into the recovery flow.
 - Select Bitcoin-like, Ethereum, Solana, and TON target families with one CLI.
@@ -226,6 +227,8 @@ Rules:
 - valid phrase lengths are `3..48` words and must stay divisible by `3`
 - the tool auto-detects the matching BIP39 language wordlist
 - the parser can correct common typos when the intended BIP39 word is obvious
+- file inputs are processed in streaming mode: one line is prepared, checked, and finished before the next line is read
+- large template files are not preloaded into RAM before recovery starts
 
 ### Derivations file
 
@@ -261,7 +264,7 @@ wallet-passphrase-example
 | Option | Meaning | Notes |
 | --- | --- | --- |
 | `-recovery "..."` | Add one template inline | Repeatable |
-| `-recovery -i FILE` | Load templates from file | Repeatable |
+| `-recovery -i FILE` | Load templates from file | Repeatable; processed line by line in streaming mode |
 | `-wordlist FILE` | Override embedded BIP39 wordlist | Must still be a valid 2048-word BIP39 list |
 | `-d FILE` | Load derivation paths from file | Required |
 
@@ -574,6 +577,7 @@ This public release is also an example of the kind of performance-oriented softw
 - Использовать встроенные словари BIP39 или внешний `-wordlist FILE`.
 - Автоматически подбирать подходящий языковой BIP39-словарь и исправлять типичные опечатки в словах, когда нужное слово определяется однозначно.
 - Принимать шаблоны как из командной строки, так и из файлов.
+- Обрабатывать recovery-файлы в настоящем streaming-режиме: по одной строке, без предварительной загрузки всего файла в ОЗУ.
 - Проверять кандидатов по `-hash`, Bloom-фильтрам, XOR-фильтрам и optional CPU verify.
 - Создавать XOR-фильтры с помощью [XorFilter](https://github.com/XopMC/XorFilter) и сразу использовать их в recovery flow.
 - Работать с target-семействами Bitcoin-like, Ethereum, Solana и TON.
@@ -731,6 +735,8 @@ adapt access alert human kiwi rough pottery level soon funny * *
 - допустимая длина фразы — от `3` до `48` слов, при этом число слов должно быть кратно `3`
 - инструмент автоматически подбирает подходящий языковой BIP39-словарь
 - парсер умеет исправлять типичные опечатки, если нужное слово определяется однозначно
+- file input обрабатывается в streaming-режиме: сначала завершается текущая строка, и только потом читается следующая
+- большие файлы с шаблонами не предзагружаются целиком в ОЗУ до старта recovery
 
 ### Файл derivation-path’ов
 
@@ -766,7 +772,7 @@ wallet-passphrase-example
 | Аргумент | Что делает | Примечание |
 | --- | --- | --- |
 | `-recovery "..."` | Добавляет один шаблон прямо из CLI | Можно повторять |
-| `-recovery -i FILE` | Загружает шаблоны из файла | Можно повторять |
+| `-recovery -i FILE` | Загружает шаблоны из файла | Можно повторять; строки обрабатываются последовательно в streaming-режиме |
 | `-wordlist FILE` | Подменяет встроенный словарь BIP39 | Должен быть корректный 2048-word BIP39 список |
 | `-d FILE` | Загружает derivation-path’ы | Обязательный аргумент |
 
